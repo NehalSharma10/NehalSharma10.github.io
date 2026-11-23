@@ -493,6 +493,11 @@ a.zoomable:hover::after{opacity:1;content:"Open full size ↗"}
 #contact a{display:inline-block;padding-block:8px}
 .short-ver{margin:14px 0 0;font-size:14.5px;opacity:.9}
 .short-ver a{color:inherit;font-weight:600;text-underline-offset:3px;display:inline-block;padding-block:6px}
+.hero-proof{margin-top:18px;padding:14px 16px;border:1px solid rgba(255,255,255,.2);border-radius:12px;background:rgba(255,255,255,.04);max-width:60ch}
+.hero-proof .hp-h{margin:0 0 8px;font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;opacity:.85}
+.hero-proof ul{margin:0;padding-left:18px;display:grid;gap:8px;font-size:14.5px;line-height:1.5}
+.hero-proof a{color:inherit;font-weight:600;text-underline-offset:3px;display:inline-block;padding-block:4px}
+#disagreement,#who-gets-what{scroll-margin-top:80px}
 </style></head><body>
 <a class="nk-skip" href="#content">Skip to content</a>
 
@@ -522,6 +527,14 @@ a.zoomable:hover::after{opacity:1;content:"Open full size ↗"}
         <div class="tagline"><span>UX case study</span><span>Logistics SaaS</span><span>2026</span></div>
         <h1 id="content" tabindex="-1">No shipment update <em>left unsaid.</em></h1>
         <p class="lede">On a US customs platform, shipment updates depended on admins writing emails by hand, so customers had to chase updates themselves. I designed the notification system that now sends them automatically.</p>
+        <div class="hero-proof">
+          <p class="hp-h">Beyond the screens</p>
+          <ul>
+            <li><b>Found a middle ground with engineering.</b> Engineers pushed back on my first idea, a yes/no popup. I proposed a Recipients section instead: one place for users to choose, clean data for engineers. <a href="#disagreement">Read it ↓</a></li>
+            <li><b>Proposed the next release myself.</b> After launch I designed a "who gets what" view, so admins can see where every alert goes, a need v1 didn't solve. <a href="#who-gets-what">See it ↓</a></li>
+          </ul>
+        </div>
+
         <dl class="facts">
           <div><dt>Role</dt><dd>UX Designer II</dd></div>
           <div><dt>Team</dt><dd>PM + engineers</dd></div>
@@ -817,7 +830,7 @@ a.zoomable:hover::after{opacity:1;content:"Open full size ↗"}
           <p>Support tickets also needed notifications, but they follow a different flow and a different set of people. Adding them would have doubled the work.</p>
           <p>I kept v1 focused on shipment alerts, the biggest pain for customers, and planned tickets for a later release.</p>
         </article>
-        <article class="card">
+        <article class="card" id="disagreement">
           <span class="tag">Disagreement with engineering</span>
           <h3>A popup that became a list</h3>
           <div class="swap"><span><s>Popup:</s> “Do you want to receive notifications? Yes / No”</span><b aria-hidden="true">→</b><span class="new">Recipients section on the form</span></div>
@@ -877,7 +890,7 @@ a.zoomable:hover::after{opacity:1;content:"Open full size ↗"}
           </table></div>
         </div>
         <div>
-          <h3 class="mini">Concept: who gets what</h3>
+          <h3 class="mini" id="who-gets-what">Concept: who gets what</h3>
           <div class="concept">
             <div class="cx-copy">
               <p>My admin persona's pain point was "can't easily see who gets what", and v1 didn't solve it. The override works in the backend, but nothing on screen shows it. This is the view I'm proposing next: one trigger, every company, and where each alert comes from.</p>
@@ -967,7 +980,7 @@ a.zoomable:hover::after{opacity:1;content:"Open full size ↗"}
 
   <section class="sec dark" id="contact" style="padding-block:clamp(40px,6vw,72px)">
     <div class="wrap">
-      <div class="end" style="margin-top:0;border-top:0;padding-top:0"><p>Thanks for <span>reading.</span></p><div class="contact"><small>Nehal Sharma · UX Designer II · open to UX Designer II–III roles</small><a href="mailto:sharmanehal1998@gmail.com">sharmanehal1998@gmail.com</a><a href="https://www.linkedin.com/in/nehal-sharma-a9054b159" target="_blank" rel="noopener">linkedin.com/in/nehal-sharma-a9054b159</a></div></div>
+      <div class="end" style="margin-top:0;border-top:0;padding-top:0"><p>Thanks for <span>reading.</span></p><div class="contact"><small>Nehal Sharma · UX Designer II · open to new roles</small><a href="mailto:sharmanehal1998@gmail.com">sharmanehal1998@gmail.com</a><a href="https://www.linkedin.com/in/nehal-sharma-a9054b159" target="_blank" rel="noopener">linkedin.com/in/nehal-sharma-a9054b159</a></div></div>
     </div>
   </section>
 </main>
