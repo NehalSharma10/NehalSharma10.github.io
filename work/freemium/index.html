@@ -1,0 +1,595 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Case study: a freemium trial system for a B2B customs platform. One list for sales, in-place extensions, a safe view-as-customer mode and ten lifecycle emails.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%231c1917'/%3E%3Ctext x='32' y='42' text-anchor='middle' font-family='Arial,Helvetica,sans-serif' font-size='28' font-weight='700' fill='%23ffc83d'%3ENS%3C/text%3E%3C/svg%3E">
+<title>Freemium trials · Nehal Sharma</title>
+<meta property="og:url" content="https://nehalsharma10.github.io/work/freemium/">
+<link rel="canonical" href="https://nehalsharma10.github.io/work/freemium/">
+<meta property="og:title" content="Freemium trials · Nehal Sharma">
+<meta property="og:description" content="Designing a 15-day free trial that sales can run, customers understand, and nobody forgets about.">
+<meta property="og:image" content="https://nehalsharma10.github.io/work/freemium/img/list.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#15171C">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Freemium trials: "the page is a 15-day trial".
+   Look: sharp edges, hairlines, traffic-light signals, dark bands. Different from the other three case studies.
+   Auto layout: every stack is flex/grid with gap from the spacing scale. No ad-hoc margins. */
+:root{
+  color-scheme:light;
+  /* colour */
+  --paper:#FAFAF7; --white:#FFFFFF; --sand:#F1F0EA;
+  --ink:#15171C; --ink-2:#4B4F5A; --ink-3:#5E626D; --line:#E2E1DA; --line-2:#CFCEC6;
+  --night:#15171C; --night-2:#1F222A; --on-night:#F4F2EC; --on-night-2:#B4B6BE; --night-line:#2E323C;
+  --go:#16A34A; --go-soft:#E3F6EA;
+  --wait:#F59E0B; --wait-ink:#9A5B00; --wait-soft:#FFF3D6;
+  --stop:#DC2626; --stop-soft:#FDECEC;
+  --sales:#4F46E5; --sales-soft:#ECEBFF;
+  --ops:#B45309;   --ops-soft:#FFF1DE;
+  --cust:#0F766E;  --cust-soft:#DFF4F1;
+  /* type */
+  --f-head:"Sora",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  /* spacing scale (4/8) */
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px; --s7:48px; --s8:64px; --s9:96px;
+  /* layout */
+  --gutter:var(--s4); --section-y:var(--s8); --max:1200px; --rail:0px; --r:6px;
+}
+@media (min-width:640px){:root{--gutter:var(--s5)}}
+@media (min-width:1024px){:root{--gutter:var(--s7);--section-y:var(--s9);--rail:200px}}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:var(--s8)}
+body{margin:0;background:var(--paper);color:var(--ink-2);font:400 16px/1.65 var(--f-body);-webkit-font-smoothing:antialiased}
+@media (min-width:1024px){body{font-size:17px}}
+h1,h2,h3,p,figure,ul,ol{margin:0}
+h1,h2,h3{font-family:var(--f-head);color:var(--ink);line-height:1.12;letter-spacing:-.025em;text-wrap:balance}
+h2{font-size:clamp(28px,3.6vw,44px);font-weight:700}
+h3{font-size:clamp(18px,1.8vw,21px);font-weight:600;letter-spacing:-.015em}
+strong{color:var(--ink);font-weight:600}
+a{color:inherit}
+img{display:block;max-width:100%;height:auto}
+:focus-visible{outline:2px solid var(--sales);outline-offset:3px}
+.mono{font-family:var(--f-mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+
+/* ---------- layout primitives ---------- */
+.wrap{width:100%;max-width:var(--max);margin-inline:auto;padding-inline:var(--gutter)}
+.stack{display:flex;flex-direction:column;gap:var(--gap,var(--s5))}
+.cols{display:grid;gap:var(--gap,var(--s5));grid-template-columns:1fr}
+@media (min-width:640px){.cols.c2,.cols.c3,.cols.c4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (min-width:1024px){.cols.c3{grid-template-columns:repeat(3,minmax(0,1fr))}.cols.c4{grid-template-columns:repeat(4,minmax(0,1fr))}}
+
+/* ---------- top bar ---------- */
+.top{position:sticky;top:0;z-index:40;background:rgba(250,250,247,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;justify-content:space-between;gap:var(--s4);min-height:56px}
+.brand{display:flex;align-items:center;gap:var(--s2);font:600 15px var(--f-head);color:var(--ink);text-decoration:none}
+.brand i{width:10px;height:10px;border-radius:50%;background:var(--go);box-shadow:14px 0 0 var(--wait),28px 0 0 var(--stop);margin-right:28px}
+.top nav{display:flex;gap:var(--s1);overflow-x:auto;scrollbar-width:none}
+.top nav::-webkit-scrollbar{display:none}
+.top nav a{font:500 14px var(--f-body);color:var(--ink-3);text-decoration:none;padding:var(--s2) var(--s3);white-space:nowrap;border-radius:var(--r)}
+.top nav a:hover{color:var(--ink);background:var(--sand)}
+@media (max-width:639px){.top nav{display:none}}
+
+/* ---------- hero (dark band) ---------- */
+.hero{background:var(--night);color:var(--on-night-2)}
+.hero .wrap{display:grid;gap:var(--s7);padding-block:var(--s8);grid-template-columns:1fr;align-items:center}
+@media (min-width:1024px){.hero .wrap{grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:var(--s8);padding-block:var(--s9)}}
+.hero-copy{--gap:var(--s5)}
+.eyebrow{display:flex;align-items:center;gap:var(--s2);color:var(--on-night-2)}
+.eyebrow b{width:8px;height:8px;border-radius:50%;background:var(--go);box-shadow:0 0 0 4px rgba(22,163,74,.25)}
+.hero h1{color:var(--on-night);font-size:clamp(38px,5.6vw,72px);font-weight:700;letter-spacing:-.04em;line-height:1.02}
+.hero h1 span{color:var(--wait)}
+.hero .lead{font-size:clamp(17px,1.5vw,19px);max-width:56ch;color:var(--on-night-2)}
+.spec{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border-top:1px solid var(--night-line)}
+@media (min-width:640px){.spec{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.spec div{display:flex;flex-direction:column;gap:var(--s1);padding:var(--s4) var(--s4) var(--s4) 0;border-bottom:1px solid var(--night-line)}
+.spec dt{color:var(--on-night-2)} .spec dd{margin:0;color:var(--on-night);font-weight:600;font-size:15px;line-height:1.4}
+.conf{font-size:13.5px;color:var(--on-night-2)}
+
+/* trial pass ticket */
+.pass{position:relative;background:var(--white);color:var(--ink-2);border-radius:var(--r);display:flex;flex-direction:column;width:min(400px,100%);justify-self:center;box-shadow:0 30px 60px -30px rgba(0,0,0,.6)}
+.pass-sec{display:flex;flex-direction:column;gap:var(--s4);padding:var(--s5)}
+.pass-row{display:flex;justify-content:space-between;align-items:center;gap:var(--s3)}
+.pass-row .pass-name{font-family:var(--f-head);font-size:18px;font-weight:600;letter-spacing:-.015em;color:var(--ink)}
+.chip{display:inline-flex;align-items:center;gap:var(--s2);font:600 12px var(--f-body);padding:var(--s1) var(--s3);border-radius:99px;white-space:nowrap}
+.chip.go{background:var(--go-soft);color:#126B33} .chip.wait{background:var(--wait-soft);color:var(--wait-ink)} .chip.stop{background:var(--stop-soft);color:#B91C1C}
+.meter{display:flex;flex-direction:column;gap:var(--s2)}
+.meter .pass-row{font-size:13.5px}
+.meter b{color:var(--ink);font-variant-numeric:tabular-nums}
+.bar{height:6px;background:var(--sand);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;width:100%;background:var(--go);border-radius:inherit}
+.perf{position:relative;border-top:2px dashed var(--line-2);margin-inline:var(--s5)}
+.perf::before,.perf::after{content:"";position:absolute;top:-12px;width:22px;height:22px;border-radius:50%;background:var(--night)}
+.perf::before{left:calc(-1 * var(--s5) - 11px)} .perf::after{right:calc(-1 * var(--s5) - 11px)}
+.pass-btns{display:grid;grid-template-columns:1fr 1fr;gap:var(--s2)}
+.pass-btns span{text-align:center;font:600 13.5px var(--f-body);padding:var(--s3) var(--s2);border:1.5px solid var(--ink);border-radius:var(--r);color:var(--ink)}
+.pass-btns span.p{background:var(--ink);color:var(--white)}
+.stamp{position:absolute;right:-10px;top:-14px;transform:rotate(6deg);background:var(--wait);color:var(--ink);font:600 11.5px var(--f-mono);letter-spacing:.06em;padding:var(--s2) var(--s3);border-radius:var(--r)}
+@media (prefers-reduced-motion:no-preference){
+  .pass .d i{animation:drain 7s ease-in-out infinite alternate}
+  .pass .s i{animation:drain 7s ease-in-out -2.5s infinite alternate}
+  @keyframes drain{0%{width:100%;background:var(--go)}55%{background:var(--wait)}100%{width:10%;background:var(--stop)}}
+}
+
+/* ---------- body: countdown rail + content ---------- */
+.body{display:grid;grid-template-columns:1fr;max-width:var(--max);margin-inline:auto;padding-inline:var(--gutter)}
+@media (min-width:1024px){.body{grid-template-columns:var(--rail) minmax(0,1fr);gap:var(--s7)}}
+.rail{position:sticky;top:56px;z-index:30;background:var(--paper);border-bottom:1px solid var(--line);margin-inline:calc(-1 * var(--gutter));padding:var(--s3) var(--gutter);display:flex;flex-direction:column;gap:var(--s2)}
+.rail-now{display:flex;justify-content:space-between;align-items:baseline;gap:var(--s3)}
+.rail-now b{font:700 15px var(--f-head);color:var(--ink);font-variant-numeric:tabular-nums}
+.rail-now span{font-size:13px;color:var(--ink-3)}
+.cnt{display:flex;align-items:baseline;gap:var(--s2)}
+.cnt small{font:600 12px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+.rail .track{height:4px;background:var(--line);border-radius:99px;overflow:hidden}
+.rail .fill{height:100%;width:100%;background:var(--go);transform-origin:left;transition:transform .5s ease,background-color .3s}
+.rail ol{display:none;list-style:none;padding:0}
+@media (min-width:1024px){
+  .rail{top:56px;align-self:start;height:calc(100vh - 56px);margin:0;padding:var(--s7) 0;border:0;gap:var(--s5);background:none}
+  .rail-now{flex-direction:column;gap:var(--s1)}
+  .rail-now b{font-size:44px;letter-spacing:-.04em;line-height:1}
+  .rail .track{height:6px}
+  .rail ol{display:flex;flex-direction:column;gap:0;border-left:1px solid var(--line)}
+  .rail li a{display:flex;flex-direction:column;gap:2px;padding:var(--s2) 0 var(--s2) var(--s4);text-decoration:none;color:var(--ink-3);font-size:14px;border-left:2px solid transparent;margin-left:-1.5px}
+  .rail li a small{font:500 11px var(--f-mono);letter-spacing:.06em;text-transform:uppercase}
+  .rail li a:hover{color:var(--ink)}
+  .rail li a[aria-current="true"]{color:var(--ink);font-weight:600;border-left-color:var(--sig,var(--go))}
+}
+
+.content{display:flex;flex-direction:column;min-width:0}
+.sec{display:flex;flex-direction:column;gap:var(--s7);padding-block:var(--section-y);border-bottom:1px solid var(--line);min-width:0}
+.sec:last-child{border-bottom:0}
+.sec-head{display:flex;flex-direction:column;gap:var(--s4);max-width:760px}
+.day{display:flex;align-items:center;gap:var(--s2);color:var(--ink-3)}
+.day i{width:8px;height:8px;border-radius:50%;background:var(--sig,var(--go))}
+.lead{font-size:clamp(17px,1.5vw,19px);color:var(--ink-2);max-width:62ch}
+
+/* problem: numbered columns divided by hairlines */
+.numbered{display:grid;grid-template-columns:1fr;border-top:1px solid var(--ink)}
+@media (min-width:768px){.numbered{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.numbered>div{display:flex;flex-direction:column;gap:var(--s3);padding:var(--s5) 0;border-bottom:1px solid var(--line)}
+@media (min-width:768px){.numbered>div{padding:var(--s5) var(--s5) var(--s5) 0;border-bottom:0}.numbered>div+div{padding-left:var(--s5);border-left:1px solid var(--line)}}
+.numbered .n{font:600 13px var(--f-mono);color:var(--stop)}
+.numbered p{font-size:15.5px}
+
+/* people */
+.person{display:flex;flex-direction:column;gap:var(--s3);padding:var(--s5);background:var(--white);border:1px solid var(--line);border-top:4px solid var(--c);border-radius:var(--r)}
+.person .who{display:flex;align-items:center;gap:var(--s3)}
+.person .ava{width:40px;height:40px;border-radius:var(--r);display:grid;place-items:center;font:700 16px var(--f-head);background:var(--cs);color:var(--c);flex:none}
+.person .who div{display:flex;flex-direction:column}
+.person .who b{color:var(--ink);font-weight:600} .person .who small{font-size:13px;color:var(--ink-3)}
+.person p{font-size:15px}
+.p-sales{--c:var(--sales);--cs:var(--sales-soft)} .p-ops{--c:var(--ops);--cs:var(--ops-soft)} .p-cust{--c:var(--cust);--cs:var(--cust-soft)}
+
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--white)}
+table{border-collapse:collapse;width:100%;min-width:620px;font-size:14.5px}
+@media (max-width:640px){
+  .tbl{overflow:visible;border:0;background:none}
+  .tbl table,.tbl tbody,.tbl tr,.tbl td{display:block;min-width:0;width:100%}
+  .tbl thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  .tbl tr{border:1px solid var(--line);border-radius:var(--r);background:var(--white);padding:var(--s3) var(--s4);margin-bottom:var(--s3)}
+  .tbl td{border:0;padding:4px 0}
+  .tbl td[data-label="Event"]{font-family:var(--f-head);font-weight:600;font-size:16px;color:var(--ink);padding-bottom:8px}
+  .tbl td:not([data-label="Event"])::before{content:attr(data-label) ": ";font-weight:600;color:var(--ink-2)}
+  .tbl td.no:not([data-label="Event"]){display:none}
+}
+th,td{text-align:left;padding:var(--s3) var(--s4);border-bottom:1px solid var(--line);vertical-align:top}
+th{font:600 11.5px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);background:var(--sand)}
+th span{display:inline-flex;align-items:center;gap:var(--s2)} th span i{width:8px;height:8px;border-radius:50%;background:var(--c)}
+tr:last-child td{border-bottom:0}
+td:first-child{color:var(--ink);font-weight:600}
+td.no{color:var(--ink-3)}
+
+/* journey: horizontal line with stops */
+.line-tl{list-style:none;padding:0;display:grid;grid-template-columns:1fr;gap:0;position:relative}
+.line-tl li{display:grid;grid-template-columns:24px minmax(0,1fr);gap:var(--s3);padding-bottom:var(--s5);position:relative}
+.line-tl li::before{content:"";position:absolute;left:11px;top:16px;bottom:0;width:2px;background:var(--line)}
+.line-tl li:last-child::before{display:none}
+.line-tl .dot{width:24px;height:24px;border-radius:50%;background:var(--white);border:2px solid var(--sig);display:grid;place-items:center;position:relative;z-index:1}
+.line-tl .dot::after{content:"";width:8px;height:8px;border-radius:50%;background:var(--sig)}
+.line-tl .ev{display:flex;flex-direction:column;gap:var(--s2);min-width:0}
+.line-tl .ev p{font-size:14.5px}
+.to{display:flex;flex-wrap:wrap;gap:var(--s1)}
+.to span{font:600 11.5px var(--f-body);padding:2px var(--s2);border-radius:4px;background:var(--cs);color:var(--c)}
+@media (min-width:1024px){
+  .line-tl{grid-template-columns:repeat(5,minmax(0,1fr));gap:var(--s4)}
+  .line-tl li{grid-template-columns:1fr;grid-template-rows:auto 1fr;gap:var(--s4);padding-bottom:0}
+  .line-tl li::before{left:24px;right:calc(-1 * var(--s4));top:11px;bottom:auto;width:auto;height:2px}
+}
+
+/* screenshots in a browser window frame */
+.win{display:flex;flex-direction:column;border:1px solid var(--line-2);border-radius:var(--r);background:var(--white);overflow:hidden;box-shadow:0 1px 2px rgba(21,23,28,.05),0 24px 48px -32px rgba(21,23,28,.35)}
+.win-bar{display:flex;align-items:center;gap:var(--s3);padding:var(--s2) var(--s3);border-bottom:1px solid var(--line);background:var(--sand)}
+.win-bar i{display:flex;gap:6px} .win-bar i::before,.win-bar i::after,.win-bar i b{content:"";width:9px;height:9px;border-radius:50%;background:var(--line-2);display:block}
+.win-bar span{font:500 11.5px var(--f-mono);color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.win a{display:block;line-height:0}
+.win a:hover img{opacity:.92}
+.shot{display:flex;flex-direction:column;gap:var(--s2);min-width:0}
+.shot figcaption{font-size:13.5px;color:var(--ink-3);line-height:1.5}
+.small-win a{display:grid;place-items:center;padding:var(--s5);background:var(--sand);min-height:100%}
+
+/* email split */
+.split{display:grid;gap:var(--s6);grid-template-columns:1fr;align-items:start}
+@media (min-width:900px){.split{grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:var(--s7)}}
+.ticks{list-style:none;padding:0;display:flex;flex-direction:column;gap:var(--s4)}
+.ticks li{display:grid;grid-template-columns:20px minmax(0,1fr);gap:var(--s3);font-size:15.5px}
+.ticks li::before{content:"";width:20px;height:20px;margin-top:3px;border-radius:4px;background:var(--go-soft) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M5 10.5l3 3 7-7' fill='none' stroke='%2316A34A' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/16px no-repeat}
+
+/* decisions */
+.dec{display:flex;flex-direction:column;gap:var(--s5);padding-top:var(--s6);border-top:1px solid var(--line)}
+.dec:first-of-type{border-top:0;padding-top:0}
+.dec-head{display:grid;gap:var(--s4);grid-template-columns:1fr}
+@media (min-width:900px){.dec-head{grid-template-columns:64px minmax(0,1fr) minmax(0,1fr);gap:var(--s6);align-items:start}}
+.dec-num{font:700 40px/1 var(--f-head);color:var(--line-2);letter-spacing:-.04em}
+.dec-txt{display:flex;flex-direction:column;gap:var(--s3)}
+.dec-txt p{font-size:15.5px}
+.why{display:flex;flex-direction:column;gap:var(--s2);padding:var(--s4) var(--s5);background:var(--white);border:1px solid var(--line);border-left:3px solid var(--sig,var(--go));border-radius:var(--r);font-size:15px}
+.why .mono{color:var(--ink-3)}
+.legend{display:flex;flex-wrap:wrap;gap:var(--s2)}
+.trio{display:grid;gap:var(--s4);grid-template-columns:1fr}
+@media (min-width:640px){.trio{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.pair{display:grid;gap:var(--s4);grid-template-columns:1fr}
+@media (min-width:640px){.pair{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* rules band (dark) */
+.dark{background:var(--night);color:var(--on-night-2)}
+.dark .wrap{display:flex;flex-direction:column;gap:var(--s7);padding-block:var(--section-y)}
+.dark h2{color:var(--on-night)}
+.dark .day{color:var(--on-night-2)}
+.rules{display:grid;grid-template-columns:1fr;border-top:1px solid var(--night-line)}
+@media (min-width:640px){.rules{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (min-width:1024px){.rules{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.rule{display:flex;flex-direction:column;gap:var(--s3);padding:var(--s5) var(--s5) var(--s5) 0;border-bottom:1px solid var(--night-line)}
+@media (min-width:1024px){.rule{border-bottom:0}.rule+.rule{padding-left:var(--s5);border-left:1px solid var(--night-line)}}
+.rule .mono{color:var(--wait)}
+.rule h3{color:var(--on-night);font-size:18px}
+.rule p{font-size:14.5px}
+
+/* outcome */
+.measure{display:grid;grid-template-columns:1fr;border-top:1px solid var(--ink)}
+@media (min-width:640px){.measure{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:var(--s6)}}
+.measure div{display:grid;grid-template-columns:40px minmax(0,1fr);gap:var(--s3);padding:var(--s4) 0;border-bottom:1px solid var(--line)}
+.measure .mono{color:var(--ink-3);padding-top:3px}
+.measure b{display:block;color:var(--ink);font-weight:600}
+.measure span{font-size:14.5px;color:var(--ink-3)}
+.lesson{display:flex;flex-direction:column;gap:var(--s5);padding:var(--s6);background:var(--white);border:1px solid var(--line);border-radius:var(--r)}
+@media (max-width:639px){.lesson{padding:var(--s5)}}
+
+footer.end{border-top:1px solid var(--line)}
+footer.end .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:var(--s3);padding-block:var(--s5);font-size:13.5px;color:var(--ink-3)}
+.learned{margin-top:var(--s3);padding:var(--s3) var(--s4);border-left:3px solid var(--go);background:var(--white);font-size:15px;line-height:1.55;color:var(--ink-2);max-width:68ch}
+.learned strong{color:var(--ink)}
+</style>
+</head>
+<body>
+<a class="nk-skip" href="#content">Skip to content</a>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="../../index.html#freemium"><i aria-hidden="true"></i>Nehal Sharma</a>
+    <nav aria-label="Sections">
+      <a href="#problem">Problem</a><a href="#people">People</a><a href="#journey">Journey</a><a href="#design">Design</a><a href="#outcome">Outcome</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-copy stack">
+      <p class="eyebrow mono"><b aria-hidden="true"></b>Case study · Freemium trials</p>
+      <h1 id="content" tabindex="-1">A free trial that nobody <span>forgets</span> about.</h1>
+      <p class="lead">A customs platform wanted to let new customers try it for free: 15 days and 10 shipments. I designed how sales runs those trials, what the customer sees, and the emails that keep everyone in the loop.</p>
+      <dl class="spec">
+        <div><dt class="mono">Role</dt><dd>UX Designer</dd></div>
+        <div><dt class="mono">Team</dt><dd>PM + engineers</dd></div>
+        <div><dt class="mono">Timeline</dt><dd>2025</dd></div>
+        <div><dt class="mono">Status</dt><dd>Shipped</dd></div>
+      </dl>
+      <p class="conf">Work done at KlearNow.ai. Customer names and data are hidden or blurred for confidentiality. Customer names in the screens are sample data.</p>
+    </div>
+    <div class="pass" aria-hidden="true">
+      <span class="stamp">15 DAYS · 10 SHIPMENTS</span>
+      <div class="pass-sec">
+        <p class="mono" style="color:var(--ink-3)">Trial pass · CU12351</p>
+        <div class="pass-row"><b class="pass-name">Swift Cargo Inc.</b><span class="chip go">Active</span></div>
+      </div>
+      <div class="perf"></div>
+      <div class="pass-sec">
+        <div class="meter d"><div class="pass-row"><span>Days remaining</span><b>15 / 15</b></div><div class="bar"><i></i></div></div>
+        <div class="meter s"><div class="pass-row"><span>Shipments left</span><b>10 / 10</b></div><div class="bar"><i></i></div></div>
+        <div class="pass-btns"><span>Extend trial</span><span class="p">Convert</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="body">
+  <aside class="rail" aria-label="Trial countdown">
+    <div class="rail-now"><p class="cnt"><b id="days">15</b><small id="unit">days left</small></p><span id="where">The problem</span></div>
+    <div class="track" aria-hidden="true"><div class="fill" id="fill"></div></div>
+    <ol>
+      <li><a href="#problem"><small>Day 15</small>The problem</a></li>
+      <li><a href="#people"><small>Day 12</small>Who it's for</a></li>
+      <li><a href="#journey"><small>Day 9</small>The journey</a></li>
+      <li><a href="#design"><small>Day 6</small>Key decisions</a></li>
+      <li><a href="#rules"><small>Day 3</small>Rules I followed</a></li>
+      <li><a href="#outcome"><small>Day 0</small>Outcome</a></li>
+    </ol>
+  </aside>
+
+  <main class="content">
+    <!-- PROBLEM -->
+    <section class="sec" id="problem" data-day="15" data-name="The problem" style="--sig:var(--go)">
+      <div class="sec-head">
+        <p class="day mono"><i></i>Day 15 · The problem</p>
+        <h2>A trial has two clocks. Both run out quietly.</h2>
+        <p class="lead">A trial ends when the days run out or when the shipments run out, whichever comes first. If nobody is watching, a good lead goes cold and the customer just finds a locked account.</p>
+      </div>
+      <div class="numbered">
+        <div><span class="n">01</span><h3>Sales can't see the whole picture</h3><p>Who is on a trial, how many days and shipments are left, and who is about to expire. Without one place for this, sales has to ask around or keep their own notes.</p></div>
+        <div><span class="n">02</span><h3>Customers go quiet</h3><p>Some customers get access and never sign in. By the time anyone notices, the trial is over and the chance is gone.</p></div>
+        <div><span class="n">03</span><h3>The end should not feel like a wall</h3><p>When the trial ends, the customer should know why and who to contact. Not just hit an error.</p></div>
+      </div>
+    </section>
+
+    <!-- PEOPLE -->
+    <section class="sec" id="people" data-day="12" data-name="Who it's for" style="--sig:var(--go)">
+      <div class="sec-head">
+        <p class="day mono"><i></i>Day 12 · Who it's for</p>
+        <h2>Three people. Each needs different news at a different time.</h2>
+        <p class="lead">Before drawing screens, I mapped who sees what. The same event, like "trial ending soon", means "follow up now" for sales and "talk to us to keep going" for the customer.</p>
+        <p class="learned"><strong>Where I learned this:</strong> I talked to the <strong>sales team</strong>, who run the trials, and worked from the <strong>PM's</strong> requirements. I didn't talk to operations or to trial customers before launch.</p>
+      </div>
+      <div class="cols c3">
+        <div class="person p-sales"><div class="who"><span class="ava" aria-hidden="true">S</span><div><b>Salesperson</b><small>Internal admin</small></div></div><p>Creates the trial, watches it, extends it or converts it to a paid account. Needs to know <strong>when to call</strong>.</p></div>
+        <div class="person p-ops"><div class="who"><span class="ava" aria-hidden="true">O</span><div><b>Operations team</b><small>Internal</small></div></div><p>Sets up the account behind the scenes. Needs to know <strong>a new trial exists</strong>, and nothing more.</p></div>
+        <div class="person p-cust"><div class="who"><span class="ava" aria-hidden="true">C</span><div><b>Customer</b><small>Super admin of the trial account</small></div></div><p>Tries the platform. Needs to know <strong>how to sign in, what's included, and when it ends</strong>.</p></div>
+      </div>
+      <div class="tbl" role="region" aria-label="Which email goes to whom" tabindex="0">
+        <table>
+          <thead><tr><th scope="col">Event</th><th scope="col"><span class="p-sales"><i></i>Salesperson</span></th><th scope="col"><span class="p-ops"><i></i>Operations</span></th><th scope="col"><span class="p-cust"><i></i>Customer</span></th></tr></thead>
+          <tbody>
+            <tr><td data-label="Event">Trial created</td><td data-label="Salesperson">Account details</td><td data-label="Operations">Setup details</td><td data-label="Customer">Welcome + sign-in</td></tr>
+            <tr><td data-label="Event">No sign-in for 5 days</td><td data-label="Salesperson">"ACTION: contact them"</td><td data-label="Operations" class="no">–</td><td data-label="Customer">Gentle reminder</td></tr>
+            <tr><td data-label="Event">Ending soon</td><td data-label="Salesperson">Reminder + customer link</td><td data-label="Operations" class="no">–</td><td data-label="Customer">How to continue</td></tr>
+            <tr><td data-label="Event">Extended</td><td data-label="Salesperson">No email (they did it)</td><td data-label="Operations" class="no">–</td><td data-label="Customer">New end date</td></tr>
+            <tr><td data-label="Event">Ended</td><td data-label="Salesperson">"Contact them as soon as possible"</td><td data-label="Operations" class="no">–</td><td data-label="Customer">Contact sales + banner in app</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- JOURNEY -->
+    <section class="sec" id="journey" data-day="9" data-name="The journey" style="--sig:var(--wait)">
+      <div class="sec-head">
+        <p class="day mono"><i></i>Day 9 · The journey</p>
+        <h2>10 emails, but each one has one job.</h2>
+        <p class="lead">Every email answers one question and ends with one action: sign in, view the customer, or contact sales. Account details sit in the same card in every email so people know where to look.</p>
+      </div>
+      <ol class="line-tl">
+        <li style="--sig:var(--go)"><span class="dot" aria-hidden="true"></span><div class="ev"><span class="mono">Day 1</span><h3>Trial created</h3><div class="to"><span class="p-sales">Sales</span><span class="p-ops">Ops</span><span class="p-cust">Customer</span></div><p>Customer gets the sign-in link, features included and the end date. Password comes separately from sales.</p></div></li>
+        <li style="--sig:var(--go)"><span class="dot" aria-hidden="true"></span><div class="ev"><span class="mono">Day 5, no sign-in</span><h3>We haven't seen you</h3><div class="to"><span class="p-sales">Sales</span><span class="p-cust">Customer</span></div><p>Sales gets a subject line that starts with "ACTION". The customer gets a soft nudge, not a warning.</p></div></li>
+        <li style="--sig:var(--wait)"><span class="dot" aria-hidden="true"></span><div class="ev"><span class="mono">Near the end</span><h3>Ending soon</h3><div class="to"><span class="p-sales">Sales</span><span class="p-cust">Customer</span></div><p>Sales gets a "View customer detail" button. The customer is told how to keep going.</p></div></li>
+        <li style="--sig:var(--go)"><span class="dot" aria-hidden="true"></span><div class="ev"><span class="mono">Any time</span><h3>Extended</h3><div class="to"><span class="p-cust">Customer</span></div><p>Good news leads: the new end date is in the first line, then the usual account card.</p></div></li>
+        <li style="--sig:var(--stop)"><span class="dot" aria-hidden="true"></span><div class="ev"><span class="mono">Day 15 or 0 shipments</span><h3>Trial ended</h3><div class="to"><span class="p-sales">Sales</span><span class="p-cust">Customer</span></div><p>Customer gets one button: Contact sales. Sales is asked to reach out now.</p></div></li>
+      </ol>
+      <div class="split">
+        <figure class="shot">
+          <div class="win"><div class="win-bar"><i><b></b></i><span>inbox / welcome to your trial</span></div>
+            <a href="img/welcome.png" target="_blank" rel="noopener"><img src="img/welcome.png" width="641" height="941" loading="lazy" alt="Welcome email: greeting, a Platform and Account Information card with entity name, sign-in email, engine URL and a highlighted trial end date of October 31, 2025, a note that the password comes separately from sales, and four feature tiles."></a></div>
+          <figcaption>Welcome email. The trial end date is the only highlighted row.</figcaption>
+        </figure>
+        <div class="stack" style="--gap:var(--s5)">
+          <h3>Small choices in the welcome email</h3>
+          <ul class="ticks">
+            <li><span><strong>End date up front.</strong> It's highlighted in yellow inside the account card, not hidden at the bottom.</span></li>
+            <li><span><strong>No password in the email.</strong> It's sent separately by the salesperson, and the email says so, so nobody thinks it's missing.</span></li>
+            <li><span><strong>Features as tiles.</strong> Four short tiles show what's included, so the customer knows what to try first.</span></li>
+            <li><span><strong>A real person to contact.</strong> The email ends with the salesperson's own email, not a generic inbox.</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- DECISIONS -->
+    <section class="sec" id="design" data-day="6" data-name="Key decisions" style="--sig:var(--wait)">
+      <div class="sec-head">
+        <p class="day mono"><i></i>Day 6 · Key decisions</p>
+        <h2>What sales sees, and what the customer sees.</h2>
+      </div>
+
+      <article class="dec">
+        <div class="dec-head">
+          <span class="dec-num" aria-hidden="true">01</span>
+          <div class="dec-txt"><h3>One list for every trial. Both clocks side by side, in colour.</h3><p>Freemium customers get their own page, separate from paying customers. Each row shows days remaining and shipments left, with a small bar that turns from green to orange to red.</p>
+            <div class="legend"><span class="chip go">Plenty left</span><span class="chip wait">Half gone</span><span class="chip stop">Almost out</span></div></div>
+          <div class="why"><span class="mono">Why</span><span>A salesperson scanning 20 rows should spot who to call without reading every number. On the last day the text itself says <strong>"Expires Today"</strong> in red, so it doesn't depend on colour alone.</span></div>
+        </div>
+        <figure class="shot"><div class="win"><div class="win-bar"><i><b></b></i><span>admin / freemium-customers</span></div>
+          <a href="img/list.png" target="_blank" rel="noopener"><img src="img/list.png" width="1440" height="898" loading="lazy" alt="Freemium Customers table with six trials. Columns: customer name, start date, expiry date, days remaining with a coloured bar, shipments left with a coloured bar, status toggle and actions. The last row shows Expires Today and 0 of 10 shipments in red."></a></div>
+          <figcaption>Search by name, filter by days left, shipments left or status, and sort any column.</figcaption></figure>
+      </article>
+
+      <article class="dec">
+        <div class="dec-head">
+          <span class="dec-num" aria-hidden="true">02</span>
+          <div class="dec-txt"><h3>Extend without leaving the page. Show what's left before asking what to add.</h3><p>"Extend" opens a small popup from the row. The top of the popup repeats the current state, so the salesperson decides with the numbers in front of them. They can add days, shipments, or both.</p></div>
+          <div class="why"><span class="mono">Why</span><span>The success message says exactly what changed: <strong>"Freemium trial has been extended by 5 days and 5 shipments for Global Imports."</strong> The row updates in place, and the customer gets the "Extended" email with the new date.</span></div>
+        </div>
+        <div class="trio">
+          <figure class="shot"><div class="win small-win"><div class="win-bar"><i><b></b></i><span>row menu</span></div><a href="img/type.png" target="_blank" rel="noopener"><img src="img/type.png" width="210" height="119" loading="lazy" alt="Small action menu with two options: Extend Trial and Convert Trial."></a></div><figcaption>1. Row menu: Extend or Convert</figcaption></figure>
+          <figure class="shot"><div class="win"><div class="win-bar"><i><b></b></i><span>extend freemium</span></div><a href="img/pop1.png" target="_blank" rel="noopener"><img src="img/pop1.png" width="400" height="428" loading="lazy" alt="Extend Freemium popup for Global Imports Inc. (CU10002). Summary box: Days remaining, Expires Today; Shipment remaining, 0. Empty fields for extension duration in days and shipments to add."></a></div><figcaption>2. Current state first</figcaption></figure>
+          <figure class="shot"><div class="win"><div class="win-bar"><i><b></b></i><span>extend freemium</span></div><a href="img/pop3.png" target="_blank" rel="noopener"><img src="img/pop3.png" width="400" height="428" loading="lazy" alt="Same popup with 5 typed into the days field and 5 into the shipments field, and the Extend Freemium button showing a loading spinner."></a></div><figcaption>3. Add 5 days and 5 shipments. The button shows it's working.</figcaption></figure>
+        </div>
+        <figure class="shot"><div class="win"><div class="win-bar"><i><b></b></i><span>admin / freemium-customers</span></div>
+          <a href="img/extended.png" target="_blank" rel="noopener"><img src="img/extended.png" width="1440" height="866" loading="lazy" alt="Freemium Customers table with a green success toast at the top right: Freemium trial has been extended by 5 days and 5 shipments for Global Imports. The Global Imports row now shows 5 of 20 days and 5 of 15 shipments."></a></div>
+          <figcaption>4. The Global Imports row now reads 5/20 days and 5/15 shipments. The new total is visible, not only what's left.</figcaption></figure>
+      </article>
+
+      <article class="dec">
+        <div class="dec-head">
+          <span class="dec-num" aria-hidden="true">03</span>
+          <div class="dec-txt"><h3>See exactly what the customer sees, with a clear "you are inside their account" bar.</h3><p>When a customer says "I can't find it", sales can open the platform as that customer. They pick which user to view, a short loading screen confirms it, and a dark bar stays at the top the whole time: <strong>"Viewing: Swift Cargo Inc. (James Deo)"</strong> with a Close button.</p></div>
+          <div class="why"><span class="mono">Why</span><span>Acting inside someone else's account is risky. The bar never scrolls away, so a salesperson can't forget whose account they are in.</span></div>
+        </div>
+        <figure class="shot"><div class="win"><div class="win-bar"><i><b></b></i><span>select user to open profile</span></div>
+          <a href="img/users.png" target="_blank" rel="noopener"><img src="img/users.png" width="800" height="384" loading="lazy" alt="Select user to open profile popup: a searchable table of users with name, email, user level and a Select User button, plus an option to open the profile as an internal admin."></a></div>
+          <figcaption>1. Pick which user to view as, or open it as an admin.</figcaption></figure>
+        <div class="pair">
+          <figure class="shot"><div class="win"><div class="win-bar"><i><b></b></i><span>opening profile…</span></div><a href="img/loading.png" target="_blank" rel="noopener"><img src="img/loading.png" width="1440" height="890" loading="lazy" alt="Loading screen with the Viewing bar at the top and the message Opening the customer profile, please wait a few more seconds."></a></div><figcaption>2. Loading says what's happening</figcaption></figure>
+          <figure class="shot"><div class="win"><div class="win-bar"><i><b></b></i><span>viewing as customer</span></div><a href="img/viewing.png" target="_blank" rel="noopener"><img src="img/viewing.png" width="1440" height="894" loading="lazy" alt="The customer's platform home with a dark bar at the very top: Viewing Swift Cargo Inc. (James Deo), and a Close button on the right."></a></div><figcaption>3. The bar stays on every page</figcaption></figure>
+        </div>
+      </article>
+
+      <article class="dec">
+        <div class="dec-head">
+          <span class="dec-num" aria-hidden="true">04</span>
+          <div class="dec-txt"><h3>One page per trial, with everything sales needs before a call.</h3><p>Clicking a customer opens their trial page: dates, both clocks, services and modules included, sign-in email, and which salesperson owns the account. The three actions sit together at the top: <strong>Extend</strong>, <strong>Convert</strong>, and <strong>Open</strong> the customer's platform.</p></div>
+          <div class="why"><span class="mono">Why</span><span>Before a sales call you want one screen, not three tabs. The owner is shown so a teammate knows who to hand the lead back to.</span></div>
+        </div>
+        <figure class="shot"><div class="win"><div class="win-bar"><i><b></b></i><span>admin / freemium-customers / swift-cargo</span></div>
+          <a href="img/detail.png" target="_blank" rel="noopener"><img src="img/detail.png" width="1440" height="862" loading="lazy" alt="Trial detail page for Swift Cargo Inc. with Active toggle and buttons Extend, Convert and Open. Below: name, start date, expiry date, days remaining 15 of 15 with green bar, shipments 10 of 10, type of services, modules list and company address. Then customer account details and salesperson details."></a></div>
+          <figcaption>Some values are blurred for confidentiality.</figcaption></figure>
+      </article>
+
+      <article class="dec" style="--sig:var(--stop)">
+        <div class="dec-head">
+          <span class="dec-num" aria-hidden="true">05</span>
+          <div class="dec-txt"><h3>When the trial ends: a clear message, not a locked door.</h3><p>The customer can still sign in and see their account. A red banner across the top says the trial has ended and who to contact. Each trial shipment uses credits, so when the 10 shipments are used up, the credits page says it plainly: <strong>"Not enough credits left to process shipments."</strong></p></div>
+          <div class="why"><span class="mono">Why</span><span>Locking someone out loses the lead. Showing them their account, with one way forward, keeps the conversation open for sales.</span></div>
+        </div>
+        <figure class="shot"><div class="win"><div class="win-bar"><i><b></b></i><span>customer platform / home</span></div>
+          <a href="img/ended.png" target="_blank" rel="noopener"><img src="img/ended.png" width="1440" height="906" loading="lazy" alt="Customer platform home with a red banner across the top saying the freemium trial period has ended and to contact sales for next steps, with a close button."></a></div>
+          <figcaption>The customer's own platform after the trial ends. The banner names who to contact.</figcaption></figure>
+      </article>
+
+      <article class="dec">
+        <div class="dec-head">
+          <span class="dec-num" aria-hidden="true">06</span>
+          <div class="dec-txt"><h3>Even the empty screens say something.</h3><p>On day one there are no trials yet, so the page says so in plain words. When a search finds nothing, the filters stay on screen so it's easy to change them.</p></div>
+        </div>
+        <div class="pair">
+          <figure class="shot"><div class="win"><div class="win-bar"><i><b></b></i><span>empty</span></div><a href="img/empty.png" target="_blank" rel="noopener"><img src="img/empty.png" width="1440" height="862" loading="lazy" alt="Freemium Customers page with an illustration and the text No freemium customers added yet."></a></div><figcaption>Nothing created yet</figcaption></figure>
+          <figure class="shot"><div class="win"><div class="win-bar"><i><b></b></i><span>no results</span></div><a href="img/noresult.png" target="_blank" rel="noopener"><img src="img/noresult.png" width="1440" height="862" loading="lazy" alt="Freemium Customers table with filters still visible and the message No results found."></a></div><figcaption>Search found nothing</figcaption></figure>
+        </div>
+      </article>
+    </section>
+
+    <!-- RULES (dark band, full bleed inside content column) -->
+    <section class="sec dark-sec" id="rules" data-day="3" data-name="Rules I followed" style="--sig:var(--stop)">
+      <div class="sec-head">
+        <p class="day mono"><i></i>Day 3 · Rules I followed</p>
+        <h2>Four ideas that shaped every screen.</h2>
+      </div>
+      <div class="rules">
+        <div class="rule"><span class="mono">01</span><h3>Map who sees what first</h3><p>Three audiences, five events. The table came before any email or screen.</p></div>
+        <div class="rule"><span class="mono">02</span><h3>Two limits, one look</h3><p>Days and shipments always appear together, with the same bar style.</p></div>
+        <div class="rule"><span class="mono">03</span><h3>Every message has one action</h3><p>Sign in, view customer, or contact sales. Never a list of links.</p></div>
+        <div class="rule"><span class="mono">04</span><h3>Never leave people stuck</h3><p>Ended trials still open, with a banner and a person to contact.</p></div>
+      </div>
+    </section>
+
+    <!-- OUTCOME -->
+    <section class="sec" id="outcome" data-day="0" data-name="Outcome" style="--sig:var(--stop)">
+      <div class="sec-head">
+        <p class="day mono"><i></i>Day 0 · Outcome</p>
+        <h2>One place to run every trial, from first email to last day.</h2>
+        <p class="lead">The work covered 3 audiences, 10 lifecycle emails, the sales admin pages and the customer-side states for a trial that is active, extended or ended.</p>
+      </div>
+      <div class="stack" style="--gap:var(--s5)">
+        <h3>What I'd measure</h3>
+        <div class="measure">
+          <div><span class="mono">01</span><p><b>Trial to paid conversion</b><span>The number the whole flow exists for.</span></p></div>
+          <div><span class="mono">02</span><p><b>Sign-in within 5 days</b><span>Do the welcome email and the "we haven't seen you" nudge get people in?</span></p></div>
+          <div><span class="mono">03</span><p><b>Time from "ending soon" to a sales call</b><span>Are the list and the ACTION email helping sales act early?</span></p></div>
+          <div><span class="mono">04</span><p><b>Trials extended vs ended</b><span>Shows if 15 days and 10 shipments is the right size.</span></p></div>
+        </div>
+      </div>
+      <div class="lesson">
+        <p class="mono" style="color:var(--ink-3)">What I learned</p>
+        <h3>A trial is a conversation between sales and the customer. The product just keeps it going.</h3>
+        <ul class="ticks">
+          <li><span><strong>The same event needs different words.</strong> "Ending soon" is a to-do for sales and an invitation for the customer.</span></li>
+          <li><span><strong>Limits need a shape.</strong> Showing 5/20 instead of only "5 left" made extensions visible at a glance.</span></li>
+          <li><span><strong>Next time,</strong> I'd agree on the success numbers with the PM before launch, so the outcome above could have real figures.</span></li>
+        </ul>
+      </div>
+    </section>
+  </main>
+</div>
+
+<footer class="end">
+  <div class="wrap">
+    <span>Product design case study · Freemium trials</span>
+    <span>Work done at KlearNow.ai. Customer names and data are hidden or blurred for confidentiality.</span>
+  </div>
+</footer>
+
+<style>
+/* rules section becomes a dark panel inside the content column */
+.dark-sec{background:var(--night);color:var(--on-night-2);border-radius:var(--r);padding:var(--s7) var(--s6);border:0;margin-block:var(--s7)}
+@media (max-width:639px){.dark-sec{padding:var(--s6) var(--s5);margin-inline:calc(-1 * var(--gutter));border-radius:0}}
+.dark-sec h2{color:var(--on-night)} .dark-sec .day{color:var(--on-night-2)}
+.dark-sec+.sec{padding-top:var(--s5)}
+</style>
+
+<style>
+.nk-next{font-family:Inter,system-ui,sans-serif;background:#fff3e2;color:#1f1a17;padding:56px max(20px,env(safe-area-inset-left,0px)) 64px;border-top:3px solid #1f1a17}
+.nk-next-in{max-width:960px;margin:0 auto;display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between}
+.nk-next a{color:inherit}
+.nk-card{flex:1 1 380px;display:block;text-decoration:none;background:#fff;border:2px solid #1f1a17;border-radius:14px;padding:22px 24px;box-shadow:5px 5px 0 #1f1a17;transition:transform .15s,box-shadow .15s}
+.nk-card:hover,.nk-card:focus-visible{transform:translate(-2px,-2px);box-shadow:7px 7px 0 #1f1a17}
+.nk-card small{display:block;font:600 12px/1.4 Inter,system-ui,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#6e6359}
+.nk-card b{display:block;font:700 26px/1.2 Inter,system-ui,sans-serif;margin:6px 0 4px}
+.nk-card span{font-size:15px;color:#4a413a}
+.nk-home{font-weight:600;font-size:15px;text-underline-offset:4px}
+.nk-home-top{position:fixed;left:max(12px,env(safe-area-inset-left,0px));bottom:max(12px,env(safe-area-inset-bottom,0px));z-index:999;font:600 13px Inter,system-ui,sans-serif;background:#1f1a17;color:#fff3e2!important;text-decoration:none;padding:10px 14px;border-radius:999px;box-shadow:0 6px 16px rgba(0,0,0,.25)}
+.nk-home-top{display:none!important}
+.nk-home-top.away{transform:translateY(calc(100% + 28px));opacity:0;pointer-events:none}
+.nk-skip{position:absolute;left:12px;top:-60px;z-index:1000;background:#1f1a17;color:#fff3e2;padding:10px 14px;border-radius:8px;font:600 14px Inter,system-ui,sans-serif;text-decoration:none}
+.nk-skip:focus{top:12px}
+a.brand{display:inline-flex;align-items:center;min-height:32px}
+@media (max-width:640px){body{padding-bottom:72px}}
+.nk-home-top:focus-visible,.nk-card:focus-visible,.nk-home:focus-visible{outline:3px solid #c2410c;outline-offset:3px}
+</style>
+<a class="nk-home-top" href="../../index.html#freemium">← Nehal's work</a>
+<script>(function(){var b=document.querySelector(".nk-home-top");if(!b)return;var y=scrollY,t=false;addEventListener("scroll",function(){if(t)return;t=true;requestAnimationFrame(function(){var n=scrollY,end=n+innerHeight>=document.documentElement.scrollHeight-80;if(innerWidth<900){b.classList.toggle("away",!end);}else if(end||(n<y-4&&n>400)){b.classList.remove("away");}else if(n>y+4||n<=400){b.classList.add("away");}y=n;t=false;});},{passive:true});if(scrollY+innerHeight<document.documentElement.scrollHeight-80)b.classList.add("away");b.addEventListener("focus",function(){b.classList.remove("away")});})();</script>
+<section class="nk-next" aria-label="Next project">
+  <div class="nk-next-in">
+    <a class="nk-card" href="../beriglo/index.html"><small>Next project →</small><b>Beriglo redesign</b><span>E-commerce · Personal concept · 2026</span></a>
+    <a class="nk-home" href="../../index.html#freemium">← All projects</a>
+  </div>
+</section>
+
+<script>
+/* countdown rail: days left drain from 15 to 0 as you read */
+(function(){
+  var secs=[].slice.call(document.querySelectorAll('.sec[data-day]'));
+  var links=[].slice.call(document.querySelectorAll('.rail ol a'));
+  var days=document.getElementById('days'), unit=document.getElementById('unit'), where=document.getElementById('where'), fill=document.getElementById('fill');
+  function colour(p){return p>.5?'var(--go)':p>.2?'var(--wait)':'var(--stop)'}
+  function update(){
+    var vh=innerHeight, cur=secs[0];
+    secs.forEach(function(s){if(s.getBoundingClientRect().top<vh*.4)cur=s});
+    /* the counter matches the section's own "Day N" label */
+    var left=+cur.dataset.day, prog=1-left/15;
+    days.textContent=left; unit.textContent=left===1?'day left':'days left';
+    fill.style.transform='scaleX('+Math.max(.02,1-prog)+')'; fill.style.backgroundColor=colour(1-prog);
+    where.textContent=cur.dataset.name;
+    links.forEach(function(a){
+      var on=a.getAttribute('href')==='#'+cur.id;
+      a.setAttribute('aria-current',on?'true':'false');
+      a.style.setProperty('--sig',colour(1-prog));
+    });
+  }
+  addEventListener('scroll',update,{passive:true}); addEventListener('resize',update); update();
+})();
+</script>
+<script>(function(){var h;try{h=sessionStorage.getItem("home")}catch(e){}if(h!=="classic.html")return;document.querySelectorAll('a[href^="../../index.html"]').forEach(function(a){a.setAttribute("href",a.getAttribute("href").replace("../../index.html","../../classic.html").replace(/#(menu|journey|lvl-\d|notifications|credits|freemium|beriglo)$/,"#work"))})})();</script>
+</body>
+</html>

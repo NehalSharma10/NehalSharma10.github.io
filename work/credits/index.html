@@ -1,0 +1,839 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Case study: a self-serve credits checkout with promo codes, Stripe payments and designed error states.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%231c1917'/%3E%3Ctext x='32' y='42' text-anchor='middle' font-family='Arial,Helvetica,sans-serif' font-size='28' font-weight='700' fill='%23ffc83d'%3ENS%3C/text%3E%3C/svg%3E">
+<title>Credits checkout · Nehal Sharma</title>
+<meta property="og:url" content="https://nehalsharma10.github.io/work/credits/">
+<link rel="canonical" href="https://nehalsharma10.github.io/work/credits/">
+<meta property="og:title" content="Credits checkout · Nehal Sharma">
+<meta property="og:description" content="A self-serve credits checkout with promo codes, Stripe payments and calm error states.">
+<meta property="og:image" content="https://nehalsharma10.github.io/work/credits/images/credits-checkout/promo-saved.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700;6..12,800&family=DM+Mono:wght@500&display=swap">
+<style>
+/* Layout: soft fintech app — centered column of big rounded pastel cards, floating pill nav, playful coin/receipt illustrations.
+   Breakpoints: S <640 · M 640–1023 · L 1024–1439 · XL ≥1440 */
+:root{
+  color-scheme:light;
+  --bg:#F7FBFA;
+  --card:#FFFFFF;
+  --ink:#16323A;
+  --text:#3C5860;
+  --muted:#566B71;
+  --line:#E3EEEC;
+  --mint:#CDF3E4;  --mint-2:#E9FAF3; --mint-ink:#09785A; --mint-strong:#13B98D;
+  --sky:#D3ECFD;   --sky-2:#EDF7FF;  --sky-ink:#1A6DAA;  --sky-strong:#3AA0EA;
+  --peach:#FFE4D6; --peach-2:#FFF4EE; --peach-ink:#A84F28;   /* the old way */
+  --sun:#FFE9A8;
+  --err:#D92D20; --err-bg:#FFF5F5; --err-line:#F7C1BC;
+  --navy:#33657C;
+  --stripe:#635BFF;
+  --shadow:0 2px 4px rgba(22,50,58,.04),0 18px 40px -20px rgba(22,50,58,.18);
+  --f-head:"Outfit","Nunito Sans",system-ui,sans-serif;
+  --f-body:"Nunito Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"DM Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  --gutter:16px; --gap:16px; --pad:24px; --r:24px; --r-lg:32px; --max:1080px;
+}
+@media (min-width:640px){:root{--gutter:24px;--gap:20px;--pad:36px;--r:28px;--r-lg:36px}}
+@media (min-width:1024px){:root{--gutter:32px;--gap:24px;--pad:56px;--r:32px;--r-lg:44px}}
+@media (min-width:1440px){:root{--gutter:40px;--gap:28px;--pad:72px;--max:1240px}}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--f-body);font-size:16px;line-height:1.7;-webkit-font-smoothing:antialiased}
+@media (min-width:1024px){body{font-size:17px}}
+h1,h2,h3{font-family:var(--f-head);color:var(--ink);margin:0;line-height:1.12;text-wrap:balance;letter-spacing:-.02em}
+h2{font-size:clamp(28px,4vw,44px);font-weight:700}
+h3{font-size:clamp(19px,2vw,22px);font-weight:600}
+p{margin:0}
+strong{color:var(--ink);font-weight:800}
+:focus-visible{outline:3px solid var(--sky-strong);outline-offset:3px;border-radius:10px}
+.num{font-variant-numeric:tabular-nums}
+.lead{font-size:clamp(17px,1.6vw,19px);color:var(--muted);max-width:60ch}
+.tagline{display:inline-flex;align-items:center;gap:8px;align-self:flex-start;font-weight:800;font-size:13px;padding:6px 14px;border-radius:999px;background:var(--mint);color:var(--mint-ink)}
+.tagline.sky{background:var(--sky);color:var(--sky-ink)}
+.tagline.peach{background:var(--peach);color:var(--peach-ink)}
+.tagline.red{background:var(--err-bg);color:var(--err)}
+
+/* ---------- page column: auto layout ---------- */
+.page{display:flex;flex-direction:column;gap:var(--gap);max-width:var(--max);margin-inline:auto;padding-inline:var(--gutter);padding-block:16px 48px}
+
+/* floating pill nav */
+.nav{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px);z-index:30;display:flex;justify-content:center}
+@media (max-width:640px){.nav{position:static}.nav-in{background:#fff}}
+.nav-in{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.88);backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:999px;padding:6px;box-shadow:var(--shadow);max-width:100%}
+.logo{display:flex;align-items:center;gap:8px;padding:4px 12px 4px 6px;font-family:var(--f-head);font-weight:700;color:var(--ink);white-space:nowrap}
+.logo i{width:26px;height:26px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff 0 18%,transparent 19%),linear-gradient(135deg,#7EE0BF,#3AA0EA);flex:none}
+.nav-links{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;min-width:0}
+.nav-links::-webkit-scrollbar{display:none}
+.nav-links a{font-size:14px;font-weight:700;color:var(--muted);text-decoration:none;padding:8px 14px;border-radius:999px;white-space:nowrap}
+.nav-links a:hover{background:var(--mint-2);color:var(--mint-ink)}
+@media (max-width:639px){.logo span{display:none}.nav-links a{padding:8px 10px;font-size:13px}}
+
+/* cards */
+.card{background:var(--card);border-radius:var(--r-lg);padding:var(--pad);display:flex;flex-direction:column;gap:32px;box-shadow:var(--shadow);min-width:0}
+.card.mint{background:linear-gradient(180deg,var(--mint-2) 0%,#fff 60%)}
+.card.sky{background:linear-gradient(180deg,var(--sky-2) 0%,#fff 60%)}
+.card.peach{background:linear-gradient(180deg,var(--peach-2) 0%,#fff 60%)}
+.head{display:flex;flex-direction:column;gap:14px;max-width:760px}
+.prose{display:flex;flex-direction:column;gap:16px;max-width:66ch}
+
+/* grids */
+.grid{display:grid;gap:var(--gap);grid-template-columns:1fr}
+@media (min-width:640px){.g2,.g3,.g4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (min-width:1024px){.g3{grid-template-columns:repeat(3,minmax(0,1fr))}.g4{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.bubble{border-radius:var(--r);padding:22px;display:flex;flex-direction:column;gap:10px;min-width:0;background:#F4F8F8}
+.bubble p{font-size:15px;color:var(--text)}
+.b-mint{background:var(--mint-2)} .b-sky{background:var(--sky-2)} .b-peach{background:var(--peach-2)} .b-white{background:#fff;border:1.5px solid var(--line)}
+.emoji{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;flex:none}
+.e-mint{background:var(--mint)} .e-sky{background:var(--sky)} .e-peach{background:var(--peach)} .e-sun{background:var(--sun)}
+.emoji svg{width:24px;height:24px}
+
+/* ---------- hero ---------- */
+.hero{border-radius:var(--r-lg);background:linear-gradient(150deg,#DDF7EC 0%,#E6F4FF 55%,#F3EEFF 100%);padding:var(--pad);display:flex;flex-direction:column;gap:32px;position:relative;overflow:hidden;margin-top:8px}
+@media (min-width:1024px){.hero{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);align-items:center;gap:40px}}
+.hero-copy{display:flex;flex-direction:column;gap:20px;min-width:0;position:relative;z-index:1}
+.hero h1{font-size:clamp(36px,5.6vw,66px);font-weight:800;letter-spacing:-.035em}
+.hero h1 em{font-style:normal;color:var(--mint-ink);background:linear-gradient(transparent 62%,var(--mint) 62%);padding-inline:4px;border-radius:4px}
+.facts{display:flex;flex-wrap:wrap;gap:8px}
+.facts span{background:rgba(255,255,255,.8);border-radius:999px;padding:7px 14px;font-size:13.5px;font-weight:700;color:var(--ink)}
+.facts b{color:var(--muted);font-weight:600;margin-right:6px}
+.hero-art{position:relative;display:flex;flex-direction:column;align-items:center;gap:14px;padding-block:24px;min-width:0}
+.phone{width:min(300px,100%);background:#fff;border-radius:34px;padding:18px;box-shadow:0 30px 60px -28px rgba(22,50,58,.45);display:flex;flex-direction:column;gap:12px;position:relative;z-index:2}
+.phone .bal{border-radius:22px;padding:18px;background:linear-gradient(135deg,#13B98D,#3AA0EA);color:#fff}
+.phone .bal small{opacity:.85;font-size:12px;font-weight:700}
+.phone .bal b{display:block;font-family:var(--f-head);font-size:34px;line-height:1.1}
+.phone .bal span{font-size:12px;opacity:.9}
+.ph-row{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px;padding:10px 12px;border-radius:14px;background:#F4F8F8}
+.ph-row b{color:var(--ink);white-space:nowrap}
+.ph-row .ok{color:var(--mint-ink);font-weight:800}
+.ph-btn{border-radius:14px;background:var(--ink);color:#fff;text-align:center;font-weight:800;padding:12px;font-size:14px}
+.badges{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;position:relative;z-index:3}
+.float{background:#fff;border-radius:18px;box-shadow:var(--shadow);padding:8px 14px 8px 8px;font-size:12.5px;font-weight:800;color:var(--ink);display:flex;align-items:center;gap:8px;white-space:nowrap}
+.float .emoji{width:28px;height:28px;border-radius:9px;font-size:13px}
+.coin{position:absolute;border-radius:50%;background:radial-gradient(circle at 35% 30%,#FFF7D1 0 22%,#FFD970 23% 60%,#F2B93B 61%);box-shadow:inset 0 -3px 0 rgba(0,0,0,.08);z-index:1}
+.coin-a{width:48px;height:48px;bottom:10%;right:3%} .coin-b{width:32px;height:32px;top:30%;left:3%} .coin-c{width:20px;height:20px;bottom:22%;left:10%}
+@media (prefers-reduced-motion:no-preference){
+  .coin{animation:bob 4s ease-in-out infinite}
+  .coin-b{animation-delay:-1.3s}.coin-c{animation-delay:-2.6s}
+  @keyframes bob{50%{transform:translateY(-10px)}}
+}
+
+.own{font-size:15px;background:rgba(255,255,255,.75);border-radius:18px;padding:14px 16px;max-width:62ch}
+.breakdown{display:flex;flex-wrap:wrap;gap:8px}
+.breakdown span{background:#F4F7F8;border-radius:999px;padding:8px 14px;font-size:14px;font-weight:700;color:var(--ink)}
+.breakdown b{color:var(--err);margin-right:6px}
+
+.shots{gap:16px}
+.shot{margin:0;display:flex;flex-direction:column;gap:8px;min-width:0}
+.shot a{display:block;border-radius:14px;overflow:hidden;box-shadow:var(--shadow);background:#fff;line-height:0}
+.shot img{width:100%;height:auto;display:block}
+.shot a:hover{outline:2px solid var(--sky-strong)}
+.shot figcaption{font-size:13px;color:var(--muted);line-height:1.5}
+.two-shots{display:grid;grid-template-columns:1fr;gap:16px}
+@media (min-width:640px){.two-shots{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.gallery{display:grid;gap:var(--gap);grid-template-columns:1fr}
+@media (min-width:1024px){.gallery{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.note{font-size:13px;color:var(--muted);background:var(--sun);border-radius:12px;padding:10px 14px}
+
+/* responsive fixes */
+.row>span:first-child{min-width:0}
+.row>span:last-child,.row>b{white-space:nowrap;text-align:right}
+.path span:not(:last-child)::after{content:"→";margin-left:8px;color:var(--muted);font-weight:600}
+.flow.happy .path span.end,.path span.end{background:var(--mint-ink);color:#fff}
+.breakdown{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:8px}
+.breakdown span{display:flex;align-items:baseline;gap:8px;border-radius:14px;line-height:1.35}
+.breakdown b{flex:none;margin-right:0;min-width:28px}
+@media (max-width:1279px){.coin{display:none}}
+@media (min-width:1024px){.dec{align-items:start}.dec-t{position:sticky;top:96px}.lvl .demo{margin-top:auto}}
+@media (min-width:640px) and (max-width:1023px){.g3>:last-child:nth-child(odd){grid-column:1/-1}}
+
+.iter{border-radius:var(--r);background:var(--sun);background:linear-gradient(180deg,#FFF8E1,#fff 80%);border:1.5px solid #F6E3A8;padding:clamp(18px,3vw,28px);display:flex;flex-direction:column;gap:18px}
+.iter-head{display:flex;flex-direction:column;gap:10px;max-width:68ch}
+.iter-grid{display:grid;grid-template-columns:1fr;gap:16px}
+@media (min-width:768px){.iter-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.ver{align-self:flex-start;font-size:12px;font-weight:800;padding:3px 10px;border-radius:999px}
+.ver.before{background:var(--peach);color:var(--peach-ink)} .ver.after{background:var(--mint);color:var(--mint-ink)}
+
+.trade{display:flex;gap:12px;align-items:flex-start;border-radius:20px;background:var(--peach-2);padding:12px 16px;font-size:14.5px}
+.trade i{font-style:normal;flex:none;width:26px;height:26px;border-radius:50%;background:var(--peach);color:var(--peach-ink);display:grid;place-items:center;font-weight:800;font-size:13px}
+.trade b{color:var(--ink)}
+.ticks em{font-style:normal;color:var(--muted)}
+
+/* ---------- before / after ---------- */
+.ba{display:grid;gap:var(--gap);grid-template-columns:1fr}
+@media (min-width:1024px){.ba{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.lane{border-radius:var(--r);padding:22px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.lane.old{background:var(--peach-2)}
+.lane.new{background:var(--mint-2)}
+.lane-h{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.lane-h h3{font-size:20px}
+.time{font-family:var(--f-mono);font-size:12px;padding:4px 10px;border-radius:999px;background:#fff}
+.old .time{color:var(--peach-ink)} .new .time{color:var(--mint-ink)}
+.steps{display:flex;flex-direction:column;gap:8px;counter-reset:st}
+.st{display:flex;gap:12px;align-items:flex-start;background:#fff;border-radius:16px;padding:12px 14px;font-size:14.5px}
+.st::before{counter-increment:st;content:counter(st);flex:none;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:12px}
+.old .st::before{background:var(--peach);color:var(--peach-ink)}
+.new .st::before{background:var(--mint);color:var(--mint-ink)}
+.st b{color:var(--ink)}
+.st small{display:block;color:var(--muted);font-size:13px}
+.st.wait{border:1.5px dashed #F3B89A;background:transparent}
+
+.pains{display:grid;gap:12px;grid-template-columns:1fr}
+@media (min-width:640px){.pains{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (min-width:1440px){.pains{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.pain{display:flex;gap:14px;align-items:flex-start;background:#fff;border:1.5px solid var(--peach);border-radius:20px;padding:16px}
+.pain b{display:block;color:var(--ink);font-size:15.5px}
+.pain span{font-size:14px;color:var(--muted)}
+
+/* people */
+.who{display:flex;align-items:center;gap:12px}
+.ava{width:48px;height:48px;border-radius:16px;display:grid;place-items:center;font-family:var(--f-head);font-weight:800;font-size:19px;flex:none}
+.ava.m{background:var(--mint);color:var(--mint-ink)} .ava.s{background:var(--sky);color:var(--sky-ink)}
+.who b{display:block;color:var(--ink)}
+.who small{color:var(--muted);font-size:13px}
+.say{font-family:var(--f-head);font-size:clamp(17px,1.7vw,19px);font-weight:500;color:var(--ink);line-height:1.4;background:#fff;border-radius:6px 20px 20px 20px;padding:14px 16px}
+.ticks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.ticks li{position:relative;padding-left:26px;font-size:14.5px}
+.ticks li::before{content:"✓";position:absolute;left:0;top:1px;width:18px;height:18px;border-radius:50%;background:var(--mint);color:var(--mint-ink);font-size:11px;font-weight:800;display:grid;place-items:center}
+
+/* process */
+.road{display:grid;gap:12px;grid-template-columns:1fr}
+@media (min-width:640px){.road{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (min-width:1024px){.road{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.stop{background:#fff;border-radius:22px;padding:18px;display:flex;flex-direction:column;gap:6px;border:1.5px solid var(--line)}
+.stop .k{align-self:flex-start;font-family:var(--f-mono);font-size:11.5px;padding:3px 10px;border-radius:999px;background:var(--sky);color:var(--sky-ink)}
+.stop b{color:var(--ink);font-size:16px}
+.stop p{font-size:14px;color:var(--muted)}
+
+/* loop */
+.loop{display:flex;flex-direction:column;gap:10px}
+@media (min-width:1024px){.loop{display:grid;grid-template-columns:minmax(0,1fr) 40px minmax(0,1fr) 40px minmax(0,1fr)}}
+.arr{display:grid;place-items:center;height:28px;color:var(--mint-strong);font-size:22px;font-weight:800;transform:rotate(90deg)}
+@media (min-width:1024px){.arr{transform:none;height:auto}}
+.ret{display:flex;gap:12px;align-items:center;border-radius:20px;padding:14px 18px;background:var(--sun);font-size:14.5px;color:var(--ink)}
+@media (min-width:1024px){.ret{grid-column:1/-1}}
+
+/* decisions */
+.dec{display:flex;flex-direction:column;gap:24px}
+@media (min-width:1024px){.dec{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:48px;align-items:center}.dec.flip .stage{order:-1}}
+.dec-t{display:flex;flex-direction:column;gap:12px;min-width:0}
+.dec-t>p{color:var(--text)}
+.dk{align-self:flex-start;font-family:var(--f-mono);font-size:12px;color:var(--sky-ink);background:var(--sky-2);padding:3px 10px;border-radius:999px}
+.why{border-radius:20px;background:var(--mint-2);padding:14px 16px;font-size:15px;display:flex;gap:12px;align-items:flex-start}
+.why i{font-style:normal;flex:none;width:26px;height:26px;border-radius:50%;background:var(--mint);color:var(--mint-ink);display:grid;place-items:center;font-weight:800;font-size:13px}
+.stage{border-radius:var(--r);padding:clamp(14px,3vw,28px);background:linear-gradient(140deg,#E3F8EF,#E8F4FE);display:flex;flex-direction:column;gap:12px;min-width:0}
+.stage.two{display:grid;grid-template-columns:1fr;gap:12px;align-items:center}
+@media (min-width:640px){.stage.two{grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr)}}
+
+/* mini UI (product look) */
+.ui{background:#fff;border-radius:16px;box-shadow:var(--shadow);padding:16px;font-size:13.5px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.ui-h{display:flex;justify-content:space-between;align-items:center;gap:10px;font-weight:800;color:var(--ink);font-size:14.5px}
+.lnk{color:var(--navy);font-size:12.5px;text-decoration:underline;font-weight:700;white-space:nowrap}
+.fld{display:flex;flex-direction:column;gap:4px;min-width:0}
+.fld small{font-size:12px;color:var(--muted)}
+.box{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pnl{background:#F4F7F8;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.pnl b{color:var(--ink);font-size:12.5px}
+.c2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.c3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;font-size:12px}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg span{font-size:12px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;white-space:nowrap}
+.seg span.on{border-color:var(--navy);color:var(--navy);background:var(--sky-2);font-weight:800}
+.chips{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.chip{font-size:12px;padding:4px 11px;border-radius:999px;background:#EEF3F4;color:var(--muted);white-space:nowrap}
+.chip.on{background:var(--navy);color:#fff}
+.qty{border:1.5px dashed #CBDADD;border-radius:10px;text-align:center;padding:14px}
+.qty b{font-family:var(--f-head);font-size:34px;color:var(--navy);display:block;line-height:1.1}
+.qty small{color:var(--navy);font-weight:800}
+.row{display:flex;justify-content:space-between;gap:12px;font-size:13px;padding-block:4px}
+.row>span:first-child{color:var(--muted)}
+.row.disc>span:last-child{color:var(--mint-ink);font-weight:800}
+.tot{display:flex;justify-content:space-between;align-items:baseline;border-top:1px dashed var(--line);padding-top:10px}
+.tot b{font-family:var(--f-head);font-size:22px;color:var(--ink)}
+.sl{display:flex;align-items:center;gap:10px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;flex-wrap:wrap}
+.sl.on{border-color:var(--navy)}
+.sl .tk{width:22px;height:22px;border-radius:7px;display:grid;place-items:center;font-size:12px;font-weight:800;background:var(--mint);color:var(--mint-ink);flex:none}
+.sl .t{flex:1;font-weight:800;color:var(--ink);min-width:80px}
+.sl .v{color:var(--muted);font-size:12.5px}
+.code{display:inline-block;font-family:var(--f-mono);font-size:11.5px;border:1px dashed var(--navy);color:var(--navy);border-radius:6px;padding:2px 8px}
+.offer{border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:6px}
+.offer-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.offer p{font-size:12.5px;color:var(--muted)}
+.saved{text-align:center;align-items:center}
+.ring{border:1.5px dashed #CBDADD;border-radius:12px;padding:14px;width:100%}
+.amt{font-family:var(--f-head);font-size:42px;font-weight:800;color:var(--navy);line-height:1}
+.crd{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:12.5px;flex-wrap:wrap}
+.crd.on{border-color:var(--navy)}
+.rd{width:14px;height:14px;border-radius:50%;border:1.5px solid var(--muted);flex:none}
+.on .rd{border:4px solid var(--navy)}
+.crd b{color:var(--ink)}
+.crd .mask{color:var(--muted);letter-spacing:.12em;flex:1}
+.stripe{display:inline-flex;font-size:11.5px;font-weight:800;color:var(--stripe);border:1px solid #D6D3FF;border-radius:6px;padding:2px 8px;background:#F6F5FF;white-space:nowrap}
+.trust{background:#F4F7F8;border-radius:10px;padding:12px;font-size:11.5px;color:var(--muted);display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.ghost{height:8px;border-radius:4px;background:var(--line)}
+
+/* errors */
+.levels{display:grid;gap:var(--gap);grid-template-columns:1fr}
+@media (min-width:1024px){.levels{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.lvl{border-radius:var(--r);padding:22px;display:flex;flex-direction:column;gap:14px;min-width:0;background:#fff;border:1.5px solid var(--line)}
+@media (min-width:640px) and (max-width:1023px){.lvl{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start}}
+.lvl .tx{display:flex;flex-direction:column;gap:8px;min-width:0}
+.lvl p{font-size:14.5px;color:var(--muted)}
+.lvl .cnt{font-size:13px;font-weight:800;color:var(--ink)}
+.demo{background:#fff;box-shadow:inset 0 0 0 1px #E3EAEC;border-radius:16px;padding:14px;font-size:12.5px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.fl{font-size:12px;color:var(--ink)} .fl i{color:var(--err);font-style:normal}
+.fi{background:#fff;border:1px solid var(--err);border-radius:6px;padding:8px 10px;color:var(--muted)}
+.fh{color:var(--err);font-size:12px;line-height:16px;margin-top:-4px}
+.alert{background:var(--err-bg);border:1px solid var(--err-line);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:2px}
+.alert b{color:var(--err);font-size:13px}
+.alert span{color:var(--ink);font-size:12px}
+.alert em{font-style:normal;color:var(--err);font-weight:800;font-size:12px;margin-top:4px}
+.mini{background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:8px}
+.mini b{color:var(--ink);font-size:12.5px}
+.anat{display:flex;flex-direction:column;gap:20px}
+@media (min-width:1024px){.anat{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:44px;align-items:center}}
+.anat .stage .alert{padding:18px 20px}
+.anat .stage .alert b{font-size:16px}
+.anat .stage .alert span{font-size:14px}
+.anat .stage .alert em{font-size:14px;margin-top:8px}
+.parts{display:flex;flex-direction:column;gap:12px}
+.part{display:flex;gap:12px;align-items:flex-start;font-size:15px}
+.part i{flex:none;font-style:normal;width:28px;height:28px;border-radius:10px;background:var(--sky);color:var(--sky-ink);display:grid;place-items:center;font-weight:800;font-size:13px}
+.tbl{overflow-x:auto;border-radius:var(--r);background:#fff;border:1.5px solid var(--line)}
+table{border-collapse:collapse;width:100%;min-width:680px;font-size:14.5px}
+th{text-align:left;font-size:12px;font-weight:800;color:var(--muted);padding:14px 18px;background:#F6FAFA;border-bottom:1px solid var(--line)}
+td{padding:14px 18px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:800;color:var(--ink);white-space:nowrap}
+.lv{display:inline-block;font-size:11.5px;font-weight:800;padding:3px 9px;border-radius:999px;margin:0 4px 4px 0;white-space:nowrap}
+.lv-f{background:var(--sky);color:var(--sky-ink)} .lv-s{background:var(--mint);color:var(--mint-ink)} .lv-p{background:var(--err-bg);color:var(--err)}
+
+/* flows */
+.flows{display:flex;flex-direction:column;gap:12px}
+.flow{display:flex;gap:14px;align-items:flex-start;border-radius:22px;padding:16px 18px;background:#fff;border:1.5px solid var(--line)}
+.flow .n{flex:none;width:40px;height:40px;border-radius:14px;display:grid;place-items:center;font-family:var(--f-head);font-weight:800;background:var(--err-bg);color:var(--err)}
+.flow.happy{background:var(--mint-2);border-color:var(--mint)}
+.flow.happy .n{background:var(--mint-ink);color:#fff}
+.fx{display:flex;flex-direction:column;gap:10px;min-width:0}
+.fx b{font-family:var(--f-head);color:var(--ink);font-size:17px}
+.path{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.path span{font-size:12.5px;font-weight:700;padding:4px 10px;border-radius:999px;background:#F1F6F7;color:var(--ink)}
+.flow.happy .path span{background:#fff}
+.path span.end{background:var(--mint-ink);color:#fff}
+.path em{font-style:normal;color:var(--muted);font-size:12px}
+
+/* details */
+.big{font-family:var(--f-head);font-size:clamp(28px,3vw,36px);font-weight:800;color:var(--ink);line-height:1}
+.sw{height:36px;border-radius:12px;background:var(--err)}
+
+/* outcome */
+.win{display:flex;gap:14px;align-items:flex-start;border-radius:22px;padding:18px;background:#fff;border:1.5px solid var(--mint)}
+.win b{display:block;color:var(--ink);font-size:16px}
+.win span{font-size:14px;color:var(--muted)}
+.met{display:flex;gap:14px;align-items:flex-start;border-radius:22px;padding:18px;background:#fff;border:1.5px solid var(--line)}
+.met b{display:block;color:var(--ink);font-size:15.5px}
+.met span{font-size:14px;color:var(--muted)}
+.lesson{border-radius:var(--r);background:linear-gradient(135deg,#DDF7EC,#E6F4FF);padding:clamp(20px,4vw,36px);display:flex;flex-direction:column;gap:14px}
+
+footer{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:13.5px;padding:24px 8px 0}
+
+@media (prefers-reduced-motion:no-preference){
+  .bubble,.stop,.flow,.met,.win,.pain{transition:transform .2s ease}
+  .bubble:hover,.stop:hover,.flow:hover,.met:hover,.win:hover,.pain:hover{transform:translateY(-3px)}
+}
+</style>
+</head>
+<body>
+<a class="nk-skip" href="#content">Skip to content</a>
+
+
+<div class="page">
+  <!-- floating pill nav -->
+  <div class="nav">
+    <nav class="nav-in" aria-label="Sections">
+      <a class="logo" href="../../index.html#credits" style="text-decoration:none"><i aria-hidden="true"></i><span>Nehal Sharma · Credits checkout</span></a>
+      <div class="nav-links">
+        <a href="#demo">Demo</a><a href="#before">Before</a><a href="#goal">Goal</a><a href="#system">System</a><a href="#checkout">Checkout</a><a href="#errors">Errors</a><a href="#flows">Flows</a><a href="#outcome">Outcome</a>
+      </div>
+    </nav>
+  </div>
+
+  <!-- HERO -->
+  <main id="main">
+  <header class="hero">
+    <div class="hero-copy">
+      <span class="tagline">B2B SaaS · Payments · Shipped</span>
+      <h1 id="content" tabindex="-1">From “please add credits” to <em>buy and pay in one go.</em></h1>
+      <p class="lead">Importers used to ask the team to add credits and pay the bill later. I designed a self-serve checkout where they buy the credits they need, apply a discount and pay on the spot, plus the admin tools behind those discounts.</p>
+      <div class="facts">
+        <span><b>Role</b>UX Designer, sole designer</span>
+        <span><b>Team</b>PM + engineers</span>
+        <span><b>Timeline</b>Jun–Jul 2024</span>
+        <span><b>Status</b>Shipped</span>
+      </div>
+      <p class="own"><strong>What I did:</strong> I designed both flows end to end: the admin promo tools, the customer checkout, all 26 error states and the clickable prototype. <strong>With the team:</strong> the PM set the requirements and business rules, and engineers built it and integrated Stripe. I documented all 26 error states so engineers could build each one.</p>
+      <p class="own" style="font-size:14px;opacity:.85">Work done at KlearNow.ai. Customer names and data are hidden or blurred for confidentiality.</p>
+    </div>
+    <div class="hero-art" aria-hidden="true">
+      <div class="badges"><div class="float"><span class="emoji e-mint">✓</span>Credits added</div><div class="float"><span class="emoji e-sun">%</span>$100 saved</div></div>
+      <div class="phone">
+        <div class="bal"><small>Credit balance</small><b class="num">5,000</b><span>Paid today · 5,042.40 USD</span></div>
+        <div class="ph-row"><span>Promo BIGFRIDAYSALE</span><b class="ok">−100 USD</b></div>
+        <div class="ph-row"><span>Paid with</span><b>Visa •••• 1234</b></div>
+        <div class="ph-btn">Buy more credits</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- SEE IT IN ACTION: a cursor walks through the real checkout -->
+  <section class="card" id="demo" aria-labelledby="demo-title">
+    <style>
+      .cd-head{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:12px}
+      .cd-head h2{margin:6px 0 0}
+      .cd-ctrl{display:flex;gap:8px}
+      .cd-btn{font:600 14px var(--f-body,inherit);padding:8px 14px;border-radius:999px;border:1.5px solid var(--ink);background:#fff;color:var(--ink);cursor:pointer}
+      .cd-btn:hover{background:var(--mint-2,#e6f7f1)}
+      .cd-btn:focus-visible{outline:3px solid #3AA0EA;outline-offset:3px}
+      .cd-stage{position:relative;width:min(100%, calc(70vh * 1325 / 994));margin:0 auto;aspect-ratio:1325/994;border-radius:18px;overflow:hidden;background:#f3f5f7;border:1px solid #dfe5ea;box-shadow:0 24px 48px -28px rgba(22,50,58,.45)}
+      .cd-zoom{position:absolute;inset:0;transition:transform .7s cubic-bezier(.45,0,.2,1),transform-origin .7s cubic-bezier(.45,0,.2,1)}
+      .cd-stage img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .45s ease}
+      .cd-stage img.on{opacity:1}
+      .cd-cursor{position:absolute;left:50%;top:50%;width:26px;height:26px;margin:-3px 0 0 -4px;z-index:3;pointer-events:none;transition:left .9s cubic-bezier(.45,0,.2,1),top .9s cubic-bezier(.45,0,.2,1),transform .12s;filter:drop-shadow(0 2px 3px rgba(0,0,0,.35))}
+      .cd-cursor.down{transform:scale(.82)}
+      .cd-ring{position:absolute;z-index:2;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;border:3px solid #3AA0EA;opacity:0;pointer-events:none}
+      .cd-ring.go{animation:cdRing .6s ease-out}
+      @keyframes cdRing{from{opacity:.9;transform:scale(.3)}to{opacity:0;transform:scale(1.6)}}
+      .cd-label{position:absolute;z-index:4;left:16px;bottom:16px;max-width:calc(100% - 32px);background:#16323A;color:#fff;font-size:14px;font-weight:600;padding:8px 12px;border-radius:12px;box-shadow:0 8px 18px -8px rgba(0,0,0,.5)}
+      .cd-steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+      .cd-steps button{width:100%;height:100%;text-align:left;background:#fff;border:1.5px solid #dfe5ea;border-radius:14px;padding:10px 12px;cursor:pointer;font:inherit;color:inherit;transition:border-color .2s,background .2s}
+      .cd-steps button:hover{border-color:var(--ink)}
+      .cd-steps button[aria-current="step"]{border-color:var(--ink);background:var(--mint-2,#e6f7f1)}
+      .cd-steps b{display:block;font-size:14px;color:var(--ink)}
+      .cd-steps span{display:block;font-size:12.5px;line-height:1.35;color:#4a5d63;margin-top:2px}
+      .cd-steps i{font-style:normal;display:inline-grid;place-items:center;width:20px;height:20px;border-radius:6px;background:var(--ink);color:#fff;font-size:11px;font-weight:700;margin-right:6px}
+      @media (max-width:860px){.cd-steps{grid-template-columns:1fr 1fr}.cd-steps li:last-child{grid-column:1/-1}}
+      .cd-wrap{position:relative;display:flex;flex-direction:column;gap:10px;width:min(100%, calc(70vh * 1325 / 994));margin-inline:auto}
+      .cd-wrap .cd-stage{width:100%}
+      @media (max-width:600px){.cd-zoom{transform:scale(var(--zs,1))}.cd-label{position:static;max-width:none;border-radius:12px}.cd-stage{width:100%}}
+      @media (max-width:520px){.cd-steps{grid-template-columns:1fr}.cd-cursor{width:22px;height:22px}}
+    </style>
+    <div class="cd-head">
+      <div><span class="tagline">See it in action</span><h2 id="demo-title">Buy credits, apply an offer, pay. One flow.</h2></div>
+      <div class="cd-ctrl"><button class="cd-btn" type="button" id="cd-play" aria-pressed="true">Pause</button></div>
+    </div>
+    <div class="cd-wrap">
+    <div class="cd-stage" id="cd-stage">
+      <div class="cd-zoom" id="cd-zoom">
+      <img width="1325" height="994" class="on" src="images/demo/step1.jpg" alt="Step 1: the credits screen with preset amounts, a total and an Apply Promo Code link">
+      <img width="1325" height="994" src="images/demo/step2.jpg" alt="Step 2: a list of promo codes this customer can use, each with its discount" loading="lazy">
+      <img width="1325" height="994" src="images/demo/step3.jpg" alt="Step 3: a confirmation that the promo saves 100 dollars" loading="lazy">
+      <img width="1325" height="994" src="images/demo/step4.jpg" alt="Step 4: payment methods card, ACH or pay offline, and a Proceed to Pay button with the total" loading="lazy">
+      <img width="1325" height="994" src="images/demo/step5.jpg" alt="Step 5: payment successful, with the receipt details and an invoice to download" loading="lazy">
+      <span class="cd-ring" id="cd-ring" aria-hidden="true"></span>
+      <svg class="cd-cursor" id="cd-cursor" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 2l7 19 2.5-8L21 10z" fill="#16323A" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></svg>
+      </div>
+    </div>
+    <p class="cd-label" id="cd-label" aria-live="polite">1 · Pick credits, then open the offers</p>
+    </div>
+    <ol class="cd-steps" id="cd-steps">
+      <li><button type="button" data-i="0"><b><i>1</i>Pick credits</b><span>Preset amounts, and offers to choose from, not a blank promo box. The order summary fills in at the payment step.</span></button></li>
+      <li><button type="button" data-i="1"><b><i>2</i>Apply an offer</b><span>Each code shows its discount, so nobody guesses.</span></button></li>
+      <li><button type="button" data-i="2"><b><i>3</i>See the saving</b><span>$100 off, confirmed before paying.</span></button></li>
+      <li><button type="button" data-i="3"><b><i>4</i>Pay your way</b><span>Card, ACH or pay offline. Fees and total shown up front.</span></button></li>
+      <li><button type="button" data-i="4"><b><i>5</i>Get the receipt</b><span>Right away, with an invoice to download.</span></button></li>
+    </ol>
+    <p style="margin:0;font-size:13px;color:#4a5d63">Real screens from the product. Names and emails are blurred.</p>
+    <script>
+    (function(){
+      var stage=document.getElementById("cd-stage"); if(!stage) return;
+      var imgs=[].slice.call(stage.querySelectorAll("img")), cur=document.getElementById("cd-cursor"), ring=document.getElementById("cd-ring"),
+          label=document.getElementById("cd-label"), btns=[].slice.call(document.querySelectorAll("#cd-steps button")), play=document.getElementById("cd-play");
+      var reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+      /* where the cursor goes on each screen, in % of the frame: optional stop first, then the click */
+      var steps=[
+        {via:[19.1,41.1], click:[9.4,58.0], text:"1 · Pick credits, then open the offers", zoom:[20,50,1.7]},
+        {click:[55.8,32.7], text:"2 · Apply an offer from the list", zoom:[40,45,1.6]},
+        {click:[40.0,71.6], text:"3 · The saving is confirmed: $100 off", zoom:[40,50,1.8]},
+        {via:[12.7,23.9], click:[53.5,89.4], text:"4 · Choose how to pay, then pay the total", zoom:[30,60,1.25]},
+        {click:[60.6,78.6], text:"5 · Receipt right away, no invoice to chase", zoom:[50,55,1.4]}
+      ];
+      var i=0, running=!reduce, timer=null, token=0;
+      var wait=function(ms,t){return new Promise(function(r,x){timer=setTimeout(function(){t===token?r():x()},ms)})};
+      function show(n){
+        i=n; imgs.forEach(function(im,k){im.classList.toggle("on",k===n)});
+        btns.forEach(function(b,k){b.setAttribute("aria-current",k===n?"step":"false")});
+        label.textContent=steps[n].text;
+        var z=steps[n].zoom, zm=document.getElementById("cd-zoom"); zm.style.transformOrigin=z[0]+"% "+z[1]+"%"; zm.style.setProperty("--zs",z[2]);
+      }
+      function move(p){cur.style.left=p[0]+"%";cur.style.top=p[1]+"%"}
+      function click(p){
+        ring.style.left=p[0]+"%";ring.style.top=p[1]+"%";
+        ring.classList.remove("go");void ring.offsetWidth;ring.classList.add("go");
+        cur.classList.add("down");setTimeout(function(){cur.classList.remove("down")},140);
+      }
+      async function run(){
+        var t=++token;
+        try{
+          while(running){
+            var s=steps[i];
+            await wait(700,t);
+            if(s.via){move(s.via);await wait(1100,t)}
+            move(s.click);await wait(1200,t);
+            click(s.click);await wait(650,t);
+            show((i+1)%steps.length);
+            await wait(900,t);
+          }
+        }catch(e){}
+      }
+      function stop(){running=false;token++;clearTimeout(timer);play.textContent="Play";play.setAttribute("aria-pressed","false")}
+      function start(){if(running)return;running=true;play.textContent="Pause";play.setAttribute("aria-pressed","true");run()}
+      play.addEventListener("click",function(){running?stop():start()});
+      btns.forEach(function(b){b.addEventListener("click",function(){stop();show(+b.dataset.i);var s=steps[i];move(s.click)})});
+      show(0); move([70,60]);
+      if(reduce){running=false;play.textContent="Play";play.setAttribute("aria-pressed","false");move(steps[0].click);return}
+      /* only play while it's on screen */
+      var io=new IntersectionObserver(function(es){es.forEach(function(e){
+        if(e.isIntersecting){ if(play.getAttribute("aria-pressed")==="true"){running=false;start()} }
+        else { if(running){running=false;token++;clearTimeout(timer)} }
+      })},{threshold:.35});
+      running=false; io.observe(stage);
+    })();
+    </script>
+  </section>
+
+  <!-- BEFORE / AFTER -->
+  <section class="card peach" id="before">
+    <div class="head">
+      <span class="tagline peach">The backstory</span>
+      <h2>Credits were added by hand, and paid for later.</h2>
+      <p class="lead">Credits work like a prepaid travel card: importers spend them on customs services. The problem was how they got topped up.</p>
+      <p class="own" style="background:#fff"><strong>Where I learned this:</strong> the <strong>finance team</strong> was chasing late credit invoices, <strong>sales and account managers</strong> had no way to offer discounts, and the <strong>product manager</strong> brought the business goal of self-serve, pay-up-front credits. I didn’t talk to customers directly while designing it.</p>
+    </div>
+    <div class="ba">
+      <div class="lane old">
+        <div class="lane-h"><h3>Before: ask, wait, pay later</h3></div>
+        <div class="steps">
+          <div class="st"><div><b>Customer asks for credits</b></div></div>
+          <div class="st wait"><div><b>Waits for someone to act</b></div></div>
+          <div class="st"><div><b>Team adds credits by hand</b></div></div>
+          <div class="st"><div><b>Invoice is sent later</b></div></div>
+          <div class="st wait"><div><b>Payment arrives… eventually</b></div></div>
+        </div>
+      </div>
+      <div class="lane new">
+        <div class="lane-h"><h3>After: buy and pay in one go</h3></div>
+        <div class="steps">
+          <div class="st"><div><b>Customer picks how many credits</b></div></div>
+          <div class="st"><div><b>Applies a promo code</b></div></div>
+          <div class="st"><div><b>Pays right away</b></div></div>
+          <div class="st"><div><b>Credits land in the account</b></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="pains">
+      <div class="pain"><span class="emoji e-peach"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke="#C25B2E" stroke-width="2"/><path d="M12 8v4l3 2" stroke="#C25B2E" stroke-width="2" stroke-linecap="round"/></svg></span><div><b>Customers waited</b></div></div>
+      <div class="pain"><span class="emoji e-peach"><svg viewBox="0 0 24 24" fill="none"><path d="M5 19V9l7-4 7 4v10" stroke="#C25B2E" stroke-width="2" stroke-linejoin="round"/><path d="M9 19v-5h6v5" stroke="#C25B2E" stroke-width="2"/></svg></span><div><b>Manual work for the team</b></div></div>
+      <div class="pain"><span class="emoji e-peach"><svg viewBox="0 0 24 24" fill="none"><rect x="5" y="3" width="14" height="18" rx="2" stroke="#C25B2E" stroke-width="2"/><path d="M9 8h6M9 12h6M9 16h3" stroke="#C25B2E" stroke-width="2" stroke-linecap="round"/></svg></span><div><b>Late or unpaid bills</b></div></div>
+      <div class="pain"><span class="emoji e-peach"><svg viewBox="0 0 24 24" fill="none"><path d="M6 18 18 6" stroke="#C25B2E" stroke-width="2" stroke-linecap="round"/><circle cx="7.5" cy="7.5" r="2.5" stroke="#C25B2E" stroke-width="2"/><circle cx="16.5" cy="16.5" r="2.5" stroke="#C25B2E" stroke-width="2"/></svg></span><div><b>No way to give discounts</b></div></div>
+    </div>
+  </section>
+
+  <!-- GOAL + PEOPLE + APPROACH -->
+  <section class="card" id="goal">
+    <div class="head"><span class="tagline sky">The goal</span><h2>Let customers serve themselves, and get paid up front.</h2><p class="lead">The admin creates offers and the customer's finance manager buys credits. The fix had to work for both, and for cash flow.</p></div>
+    <div class="grid g3">
+      <div class="bubble b-mint"><div class="who"><div class="ava m" aria-hidden="true">C</div><div><b>Customer</b><small>Finance manager at an importer</small></div></div><p>Buy any amount, any time, pay the way the company pays, and see exactly what is being charged.</p></div>
+      <div class="bubble b-sky"><div class="who"><div class="ava s" aria-hidden="true">A</div><div><b>Admin</b><small>Internal super admin</small></div></div><p>Stop adding credits by hand, and create targeted offers with limits, without engineering help.</p></div>
+      <div class="bubble b-white"><div class="who"><span class="emoji e-sun" aria-hidden="true">$</span><div><b>Business</b><small>Cash flow</small></div></div><p>Collect the money when credits are bought, so there are no credit invoices to chase.</p></div>
+    </div>
+    <div class="grid">
+      <div class="bubble b-sky">
+        <h3 style="font-size:18px">Constraints</h3>
+        <ul class="ticks">
+          <li><strong>Stripe holds all payment data</strong> (PCI DSS Level 1). The UI had to say so simply.</li>
+          <li><strong>Three ways to pay:</strong> card, ACH bank transfer and offline, and each fails differently.</li>
+          <li><strong>Existing design system,</strong> including its built-in input error state.</li>
+          <li><strong>2–4 weeks of design</strong> as the only designer, inside the Jun–Jul 2024 project.</li>
+          <li><strong>Business rules were already set.</strong> Who can create promo codes and the discount limits were decided by the business. My job was to make those rules clear in the UI and hard to misuse.</li>
+        </ul>
+      </div>
+      
+    </div>
+  </section>
+
+  <!-- SYSTEM / ADMIN -->
+  <section class="card sky" id="system">
+    <div class="head"><span class="tagline sky">The system</span><h2>An offer is created on one side and spent on the other.</h2><p class="lead">I designed both sides together, so admin rules show up clearly at checkout.</p></div>
+    <div class="loop">
+      <div class="bubble b-white"><span class="tagline sky">Admin</span><h3>Creates a promo</h3><p>Sets the discount, who can use it, the dates and a usage limit.</p></div>
+      <div class="arr" aria-hidden="true">→</div>
+      <div class="bubble b-white"><span class="tagline sky">Admin</span><h3>Sends it</h3><p>Shares the code with a country's customers or one account.</p></div>
+      <div class="arr" aria-hidden="true">→</div>
+      <div class="bubble b-mint"><span class="tagline">Customer</span><h3>Uses it and pays</h3><p>Picks it from a list, sees "$100 saved" and pays right away.</p></div>
+      <div class="ret"><span aria-hidden="true">↺</span><span>Each redemption shows up in the admin's <strong>Redeem history</strong>, ready to export to Excel for finance.</span></div>
+    </div>
+
+    <div class="dec">
+      <div class="dec-t">
+        <span class="dk">Admin · Decision A</span>
+        <h3>Targeting and limits are built into the form.</h3>
+        <p>Admins choose <strong>Country specific</strong> or <strong>Customer specific</strong> in the form itself, then set a percent or credit discount, start and end dates, and a usage limit like "Only once". Customers can apply only one promo code per order, so discounts never stack.</p>
+        <div class="why"><i>?</i><span>A discount is real money. Limits stop overuse, and targeting covers both regional campaigns and key-account deals.</span></div>
+      </div>
+      <div class="stage shots"><figure class="shot"><a href="images/credits-checkout/admin-form.webp" target="_blank" rel="noopener"><img width="1590" height="1220" src="images/credits-checkout/admin-form.webp" alt="Add promo code form with discount, usage limit and availability" loading="lazy"></a><figcaption>Discount, usage limit and who can use the code, all in one form.</figcaption></figure></div>
+    </div>
+
+    <div class="dec flip">
+      <div class="dec-t">
+        <span class="dk">Admin · Decision B</span>
+        <h3>Every code has a home: status, actions and history.</h3>
+        <p>Each code shows its availability, discount, dates and an Active switch, with quick actions to edit, clone or send, and a <strong>Redeem history</strong> with Excel export.</p>
+        <div class="why"><i>?</i><span><strong>Clone</strong> saves retyping similar offers, and the history answers "who used this, and what did it cost?"</span></div>
+      </div>
+
+    
+      <div class="stage shots"><figure class="shot"><a href="images/credits-checkout/admin-list.webp" target="_blank" rel="noopener"><img width="1590" height="1042" src="images/credits-checkout/admin-list.webp" alt="Promo code list with availability, discount, dates, status and actions" loading="lazy"></a><figcaption>The list: availability, discount, dates, an Active switch and quick actions.</figcaption></figure><figure class="shot"><a href="images/credits-checkout/admin-detail.webp" target="_blank" rel="noopener"><img width="1590" height="1129" src="images/credits-checkout/admin-detail.webp" alt="Promo code detail page with actions and redeem history" loading="lazy"></a><figcaption>Status, quick actions and Redeem history with Excel export.</figcaption></figure></div>
+    </div>
+
+    <div class="dec">
+      <div class="dec-t">
+        <span class="dk">Admin · Decision C</span>
+        <h3>Discounts can grow with the order.</h3>
+        <p>Codes can use one rate, like BIGFRIDAYSALE (2% at every order size), or be tiered. With <strong>Configure Tiers</strong>, admins set ranges, like TRADEQUICK: 2% up to 1,000 credits, 3% up to 2,000 and 4% up to 3,000.</p>
+        <div class="why"><i>?</i><span>Without tiers, admins would need a separate code for each order size.</span></div>
+        <div class="trade"><i>⇄</i><span><b>Trade-off:</b> admins do more setup when creating a code, and tiers are harder to read than one number.</span></div>
+      </div>
+      <div class="stage shots"><figure class="shot"><a href="images/credits-checkout/admin-tiers.webp" target="_blank" rel="noopener"><img width="1230" height="532" src="images/credits-checkout/admin-tiers.webp" alt="Configure discount tiers table with three ranges at 2, 3 and 4 percent" loading="lazy"></a><figcaption>Configure Discount Tiers, set up like TRADEQUICK: 2%, 3% and 4% depending on order size.</figcaption></figure></div>
+    </div>
+  </section>
+
+  <!-- CHECKOUT -->
+  <section class="card mint" id="checkout">
+    <div class="head"><span class="tagline">The checkout</span><h2>One page, three steps, and the money is always visible.</h2><p class="lead">Follow a finance manager buying 5,000 credits, one decision at a time.</p></div>
+
+    <div class="dec">
+      <div class="dec-t">
+        <span class="dk">Checkout · Decision 1</span>
+        <h3>Steps on one page, not separate pages.</h3>
+        <p>Credits, Address and Payment sit on one page. A finished step folds into one line with a <strong>Change</strong> link, and the order summary stays in view.</p>
+        <div class="why"><i>?</i><span>Business buyers want to see everything before paying. Nothing hides on a previous page, and fixing a mistake is one click.</span></div>
+      </div>
+      <div class="stage shots"><figure class="shot"><a href="images/credits-checkout/address.webp" target="_blank" rel="noopener"><img width="1591" height="1059" src="images/credits-checkout/address.webp" alt="Checkout with the Credits step collapsed and the Address step open" loading="lazy"></a><figcaption>Finished steps fold into one line with a Change link.</figcaption></figure></div>
+    </div>
+
+    <div class="dec flip">
+      <div class="dec-t">
+        <span class="dk">Checkout · Decision 2</span>
+        <h3>Buy exactly what you need, in one tap.</h3>
+        <p>This replaces "please add credits". Customers type any amount or tap a preset. Bigger bundles cost less per credit: 1 USD up to 5,000 credits, then 0.95 at 10,000, 0.90 at 25,000, down to 0.60 at 200,000. An info icon opens the full price table. A promo code is applied after volume pricing: in the example, 5,000 credits at 1 USD is 5,000 USD, and BIGFRIDAYSALE (a 2% code) takes off 100 USD.</p>
+        <div class="why"><i>?</i><span>Customers used to ask for a number; now they choose it. Presets cover common amounts.</span></div>
+      </div>
+      <div class="stage shots"><figure class="shot"><a href="images/credits-checkout/credits.webp" target="_blank" rel="noopener"><img width="1590" height="1059" src="images/credits-checkout/credits.webp" alt="Credits step with 5,000 credits selected and preset amounts" loading="lazy"></a><figcaption>Type any amount or tap a preset.</figcaption></figure></div>
+    </div>
+
+    <div class="dec">
+      <div class="dec-t">
+        <span class="dk">Checkout · Decision 3</span>
+        <h3>Pick a promo from a list instead of guessing a code.</h3>
+        <p><strong>Apply Promo Code</strong> opens the offers this customer can use. They can still type a code. Picking one shows a <strong>"$100 saved"</strong> moment.</p>
+        <div class="why"><i>?</i><span>People can only use offers they can see. The savings moment confirms the discount before any money moves.</span></div>
+        <div class="trade"><i>⇄</i><span><b>Trade-off:</b> showing offers can train customers to wait for a discount before buying. We limited the list to offers each customer is eligible for, instead of advertising every campaign.</span></div>
+      </div>
+
+    
+      <div class="stage shots"><figure class="shot"><a href="images/credits-checkout/promo-saved.webp" target="_blank" rel="noopener"><img width="1590" height="1059" src="images/credits-checkout/promo-saved.webp" alt="Popup confirming 100 dollars saved" loading="lazy"></a><figcaption>The "$100 saved" moment.</figcaption></figure></div>
+    </div>
+
+    <div class="iter">
+      <div class="iter-head"><span class="dk">What I changed</span><h3>I started with a code box, then switched to a list.</h3>
+        <p>My first version put a small box on the page where customers typed a promo code. Sales told us customers kept asking which codes they could use, so a box that needs you to already know the code didn't work. I replaced it with a popup that lists every offer the customer can use, so they pick one instead of guessing.</p></div>
+      <div class="iter-grid">
+        <figure class="shot"><span class="ver before">Before</span><a href="images/credits-checkout/promo-box.webp" target="_blank" rel="noopener"><img width="720" height="479" src="images/credits-checkout/promo-box.webp" alt="First version with a promo code text box under the credits total" loading="lazy"></a><figcaption>Type a code into a box. Works only if you already know the code.</figcaption></figure>
+        <figure class="shot"><span class="ver after">After</span><a href="images/credits-checkout/promo-list.webp" target="_blank" rel="noopener"><img width="1591" height="1059" src="images/credits-checkout/promo-list.webp" alt="Final version with a popup listing available promo codes" loading="lazy"></a><figcaption>Pick from the offers you can use. Typing a code is still possible.</figcaption></figure>
+      </div>
+    </div>
+
+    <div class="dec flip">
+      <div class="dec-t">
+        <span class="dk">Checkout · Decision 4</span>
+        <h3>Pay now, the way finance teams pay.</h3>
+        <p>This replaces "pay the invoice later": <strong>Card</strong>, <strong>Bank transfer (ACH)</strong> or <strong>Pay offline</strong>. Saved cards show only the last four digits, and a "Powered by Stripe" note says where card details go. Card payments add credits right away. ACH and offline payments still happen before credits are used, but credits wait until the payment is confirmed, and the customer sees a "credits pending" state in the meantime.</p>
+        <div class="why"><i>?</i><span>Paying up front only works if companies can pay the way they already do, and large B2B amounts often can't go on a card.</span></div>
+        <div class="trade"><i>⇄</i><span><b>Trade-off:</b> ACH and offline customers wait longer for credits than card customers. We accepted slower credits rather than adding credits before the money has cleared.</span></div>
+      </div>
+      <div class="stage shots"><figure class="shot"><a href="images/credits-checkout/payment.webp" target="_blank" rel="noopener"><img width="1591" height="1393" src="images/credits-checkout/payment.webp" alt="Payment step with card, ACH and offline options and saved cards" loading="lazy"></a><figcaption>Card, ACH and offline, with masked saved cards and the Stripe note.</figcaption></figure><figure class="shot"><a href="images/credits-checkout/add-card.webp" target="_blank" rel="noopener"><img width="1591" height="1393" src="images/credits-checkout/add-card.webp" alt="Add new card modal powered by Stripe" loading="lazy"></a><figcaption>Adding a card happens in a Stripe-powered modal.</figcaption></figure></div>
+    </div>
+
+    <div class="dec">
+      <div class="dec-t">
+        <span class="dk">Checkout · Decision 5</span>
+        <h3>The order summary is a live receipt.</h3>
+        <p>The summary updates at every step: credits, promo discount, subtotal, the Stripe fee added on top, and the final total. <strong>Preview invoice</strong> shows the document before paying.</p>
+        <div class="why"><i>?</i><span>The old invoice arrived after the fact. Now every line is visible before paying, including who charges the fee.</span></div>
+      </div>
+      <div class="stage">
+        <div class="ui">
+          <div class="ui-h">Order summary, broken down</div>
+          <div class="row num"><span>Your effective price</span><span>1 USD</span></div>
+          <div class="row num"><span>Credits</span><span>5,000</span></div>
+          <div class="row disc num"><span>Promo · BIGFRIDAYSALE</span><span>−100 USD</span></div>
+          <div class="row num"><span>Subtotal</span><span>4,900 USD</span></div>
+          <div class="row num"><span>Stripe card fee (2.9% + 30¢) ⓘ</span><span>+142.40 USD</span></div>
+          <div class="tot num"><span>Total to pay</span><b>5,042.40 USD</b></div>
+          <p style="font-size:11.5px;color:var(--muted)">The fee is set by Stripe and shown before paying; the platform adds none of its own.</p>
+        </div>
+      </div>
+    </div>
+      <div class="dec">
+      <div class="dec-t">
+        <span class="dk">The payoff</span>
+        <h3>Paid, and the credits are there (or clearly on their way).</h3>
+        <p>A short processing screen leads to a clear receipt with <strong>Download invoice</strong> and a way back to purchase history. When an ACH or offline payment hasn't cleared yet, the customer sees <strong>"Payment received, credits are pending"</strong> instead, with a plain <strong>"Do not pay again."</strong></p>
+      </div>
+      <div class="stage shots"><figure class="shot"><a href="images/credits-checkout/success.webp" target="_blank" rel="noopener"><img width="1591" height="998" src="images/credits-checkout/success.webp" alt="Payment successful screen with transaction details" loading="lazy"></a><figcaption>The receipt replaces the invoice that used to arrive later.</figcaption></figure><figure class="shot"><a href="images/credits-checkout/pending.webp" target="_blank" rel="noopener"><img width="1591" height="1169" src="images/credits-checkout/pending.webp" alt="Payment received, credits are pending, with a do not pay again message" loading="lazy"></a><figcaption>ACH or offline payment received, credits pending: "Do not pay again."</figcaption></figure></div>
+    </div>
+  </section>
+
+  <!-- ERRORS -->
+  <section class="card" id="errors">
+    <div class="head"><span class="tagline red">When things go wrong</span><h2>26 ways a payment can fail. None of them should feel scary.</h2><p class="lead">A confusing payment error makes people pay twice, call support, or go back to emailing the team. For each failure I asked: how much of the page does this affect?</p></div>
+
+    <div class="levels">
+      <div class="lvl">
+        <div class="tx"><span class="lv lv-f" style="align-self:flex-start">Level 1 · Field</span><h3>Show it on the field.</h3><p>Something was typed or picked wrong. Mark that field and leave the rest alone.</p><span class="cnt">9 cases · quantity, address, card details</span></div>
+        <div class="demo"><span class="fl">ZIP code <i>*</i></span><div class="fi">Enter ZIP code</div><span class="fh">ZIP code is required.</span></div>
+      </div>
+      <div class="lvl">
+        <div class="tx"><span class="lv lv-s" style="align-self:flex-start">Level 2 · Section</span><h3>Show it in that step.</h3><p>One step failed, like a declined card. A small alert appears inside that step only.</p><span class="cnt">11 cases · pricing, address save, card and ACH</span></div>
+        <div class="demo"><div class="mini"><b>Payment details</b><div class="alert"><b>Your card was declined</b><span>The payment was not completed.</span><em>Choose another payment method</em></div><div class="ghost" style="width:60%"></div></div></div>
+      </div>
+      <div class="lvl">
+        <div class="tx"><span class="lv lv-p" style="align-self:flex-start">Level 3 · Page</span><h3>Show it at the top.</h3><p>Only when the whole checkout is blocked, or the payment status is unknown.</p><span class="cnt">6 cases · gateway down, status unknown</span></div>
+        <div class="demo"><div class="alert"><b>Your checkout session has expired</b><span>If you already paid, check purchase history first.</span><em>Sign in again</em></div><div class="mini"><div class="ghost" style="width:70%"></div><div class="ghost" style="width:45%"></div></div></div>
+      </div>
+    </div>
+    <div class="gallery">
+      <figure class="shot"><a href="images/credits-checkout/err-field.webp" target="_blank" rel="noopener"><img width="1590" height="1154" src="images/credits-checkout/err-field.webp" alt="Address form with required-field errors on each field" loading="lazy"></a><figcaption>Level 1 · Field: each missing address field says what is needed.</figcaption></figure>
+      <figure class="shot"><a href="images/credits-checkout/err-section.webp" target="_blank" rel="noopener"><img width="1590" height="1362" src="images/credits-checkout/err-section.webp" alt="Payment step with a card declined alert inside it" loading="lazy"></a><figcaption>Level 2 · Section: the decline sits inside Payment details only.</figcaption></figure>
+      <figure class="shot"><a href="images/credits-checkout/err-page.webp" target="_blank" rel="noopener"><img width="1590" height="1178" src="images/credits-checkout/err-page.webp" alt="Checkout with a session expired banner at the top" loading="lazy"></a><figcaption>Level 3 · Page: session expired blocks the whole checkout.</figcaption></figure>
+    </div>
+
+    <div class="anat">
+      <div class="stage"><div class="alert"><b>Pricing could not be refreshed</b><span>Your quantity is saved. Refresh the quote before continuing; no payment has been submitted.</span><em>Retry pricing</em></div></div>
+      <div class="parts">
+        <span class="tagline sky">Anatomy of every error</span>
+        <div class="part"><i>1</i><p><strong>What happened,</strong> in plain words: "Pricing could not be refreshed."</p></div>
+        <div class="part"><i>2</i><p><strong>What's safe,</strong> because money makes people nervous: "Your quantity is saved… no payment has been submitted."</p></div>
+        <div class="part"><i>3</i><p><strong>One next step,</strong> written as an action: "Retry pricing". When the payment result is unknown, that step is "Check payment status", never "Pay again", so nobody is charged twice.</p></div>
+      </div>
+    </div>
+
+    <div class="bubble b-sky" style="gap:10px">
+      <h3 style="font-size:18px">Accessible by default</h3>
+      <ul class="ticks">
+        <li><strong>The error red passes WCAG AA</strong> (#D92D20, about 4.8:1 on white), even for 12px helper text.</li>
+        <li><strong>Never colour alone.</strong> Every error has a written message, not only a red border.</li>
+        <li><strong>Errors sit next to the problem,</strong> not somewhere else on the page.</li>
+      </ul>
+    </div>
+    <div class="trade"><i>⇄</i><span><b>Trade-off:</b> 26 designed states cost more build time than a generic "Something went wrong". We accepted that because with money, a vague error makes people pay twice or call support.</span></div>
+
+    
+
+    
+      <div class="bubble b-white" style="gap:12px">
+      <h3 style="font-size:18px">Rules that make 26 screens feel like one product</h3>
+      <div class="breakdown"><span><b style="color:var(--ink)">1</b> error red everywhere</span><span><b style="color:var(--ink)">4px</b> from field to message</span><span><b style="color:var(--ink)">12px</b> helper text</span><span><b style="color:var(--ink)">20/16</b> alert padding, 8px corners</span></div>
+    </div>
+  </section>
+
+  <!-- FLOWS -->
+  <section class="card sky" id="flows">
+    <div class="head"><span class="tagline sky">The prototype</span><h2>Seven flows you can click through.</h2><p class="lead">The Figma prototype opens on a use-case menu. Each error flow plays its errors in order, then returns to a normal checkout.</p></div>
+    <div class="flows">
+      <div class="flow happy"><span class="n">1</span><div class="fx"><b>Happy path: buy credits with a promo code</b><div class="path"><span>Purchase history</span><span>Choose 5,000 credits</span><span>Pick promo</span><span>$100 saved</span><span>Address</span><span>Pay by card</span><span>Processing</span><span class="end">Credits added</span></div></div></div>
+      <div class="flow"><span class="n">2</span><div class="fx"><b>Choosing credits: errors</b><div class="path"><span>Quantity required</span><span>Quantity invalid</span><span>Pricing unavailable</span><span class="end">Back to checkout</span></div></div></div>
+      <div class="flow"><span class="n">3</span><div class="fx"><b>Promo code: errors</b><div class="path"><span>Invalid</span><span>Expired</span><span>Not eligible</span><span>Service unavailable</span><span>No longer valid</span><span class="end">Back to checkout</span></div></div></div>
+      <div class="flow"><span class="n">4</span><div class="fx"><b>Billing address: errors</b><div class="path"><span>Saved address unavailable</span><span>Required fields</span><span>Invalid format</span><span>Save failed</span><span class="end">Address saved</span></div></div></div>
+      <div class="flow"><span class="n">5</span><div class="fx"><b>Card payment: errors</b><div class="path"><span>Method required</span><span>Card details invalid (page and add-card modal)</span><span>Card unavailable</span><span>Declined</span><span>Insufficient funds</span><span>Verification failed</span><span>Gateway down</span><span>Status unknown</span><span class="end">Purchase history</span></div></div></div>
+      <div class="flow"><span class="n">6</span><div class="fx"><b>Bank transfer (ACH) & offline: errors</b><div class="path"><span>ACH verification failed</span><span>ACH returned</span><span>Offline unverifiable</span><span class="end">Back to payment</span></div></div></div>
+      <div class="flow"><span class="n">7</span><div class="fx"><b>After payment & session: errors</b><div class="path"><span>Credits delayed</span><span>History won't refresh</span><span>Session expired</span><span>Sign in again</span><span class="end">Credits added</span></div></div></div>
+    </div>
+  </section>
+
+
+
+  <!-- OUTCOME -->
+  <section class="card mint" id="outcome">
+    <div class="head"><span class="tagline">Outcome</span><h2>Shipped: credits on demand, paid up front.</h2><p class="lead">Customers now top up on their own, credits are paid for at purchase, and admins run their own offers. In the first 4–5 months after launch, about 6–7% of customers started buying credits through the new Stripe checkout. Every customer could use it, and this was what the PM expected. I checked the number with the PM; it is an estimate, not tracked analytics. Here is what I'd measure to understand it better.</p></div>
+    <div class="bubble b-white" style="gap:12px">
+      <h3 style="font-size:20px">What I'd validate if I revisited it</h3>
+      <p>I didn't test this flow with customers before launch. If I revisited it, this is the test I'd run first: a 30-minute remote session with <strong>5 finance managers</strong> who buy credits today.</p>
+      <ul class="ticks">
+        <li><strong>Task 1:</strong> Buy 5,000 credits with the best promo you can find. <em>Success: they find the list and can explain the total before paying.</em></li>
+        <li><strong>Task 2:</strong> Your card is declined. What do you do? <em>Success: they choose another method without leaving checkout.</em></li>
+        <li><strong>Task 3:</strong> You paid by ACH yesterday and credits aren't there. <em>Success: they understand "pending" and don't pay again.</em></li>
+      </ul>
+    </div>
+    <h3 style="font-size:20px">What I'd measure</h3>
+    <div class="grid g2">
+      <div class="met"><span class="emoji e-sky">1</span><div><b>Manual credit requests</b><span>"Please add credits" emails still sent. Goal: near zero.</span></div></div>
+      <div class="met"><span class="emoji e-sky">2</span><div><b>Unpaid or overdue credit invoices</b><span>Should fall as credits are paid up front.</span></div></div>
+      <div class="met"><span class="emoji e-sky">3</span><div><b>Checkout completion and error recovery</b><span>Including people who hit an error.</span></div></div>
+      <div class="met"><span class="emoji e-sky">4</span><div><b>Promo redemption rate</b><span>Codes used vs sent, and effect on order size.</span></div></div>
+    </div>
+    <div class="lesson">
+      <span class="tagline sky">What I learned</span>
+      <h3>Changing how people pay is a trust problem, not only a screen problem.</h3>
+      <ul class="ticks">
+        <li><strong>Paying up front needs total clarity.</strong> With "pay later", customers could check the invoice first. Now the receipt must be clear before they pay.</li>
+        <li><strong>Severity decides placement.</strong> My first pass put a red banner on every error, and the flow looked broken. Field, section and page levels made it calm.</li>
+        <li><strong>Next time,</strong> I'd test with real finance managers before launch and agree on success metrics with the PM on day one.</li>
+      </ul>
+    </div>
+  </section>
+
+  </main>
+  <footer>
+    <span>Product design case study · Credits checkout & promo engine</span>
+    <span>Work done at KlearNow.ai. Customer names and data are hidden or blurred for confidentiality.</span>
+  </footer>
+</div>
+
+
+<style>
+.nk-next{font-family:Inter,system-ui,sans-serif;background:#fff3e2;color:#1f1a17;padding:56px max(20px,env(safe-area-inset-left,0px)) 64px;border-top:3px solid #1f1a17}
+.nk-next-in{max-width:960px;margin:0 auto;display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between}
+.nk-next a{color:inherit}
+.nk-card{flex:1 1 380px;display:block;text-decoration:none;background:#fff;border:2px solid #1f1a17;border-radius:14px;padding:22px 24px;box-shadow:5px 5px 0 #1f1a17;transition:transform .15s,box-shadow .15s}
+.nk-card:hover,.nk-card:focus-visible{transform:translate(-2px,-2px);box-shadow:7px 7px 0 #1f1a17}
+.nk-card small{display:block;font:600 12px/1.4 Inter,system-ui,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#6e6359}
+.nk-card b{display:block;font:700 26px/1.2 Inter,system-ui,sans-serif;margin:6px 0 4px}
+.nk-card span{font-size:15px;color:#4a413a}
+.nk-home{font-weight:600;font-size:15px;text-underline-offset:4px}
+.nk-home-top{position:fixed;left:max(12px,env(safe-area-inset-left,0px));bottom:max(12px,env(safe-area-inset-bottom,0px));z-index:999;font:600 13px Inter,system-ui,sans-serif;background:#1f1a17;color:#fff3e2!important;text-decoration:none;padding:10px 14px;border-radius:999px;box-shadow:0 6px 16px rgba(0,0,0,.25)}
+.nk-home-top{display:none!important}
+.nk-home-top.away{transform:translateY(calc(100% + 28px));opacity:0;pointer-events:none}
+.nk-skip{position:absolute;left:12px;top:-60px;z-index:1000;background:#1f1a17;color:#fff3e2;padding:10px 14px;border-radius:8px;font:600 14px Inter,system-ui,sans-serif;text-decoration:none}
+.nk-skip:focus{top:12px}
+a.brand{display:inline-flex;align-items:center;min-height:32px}
+
+.nk-home-top:focus-visible,.nk-card:focus-visible,.nk-home:focus-visible{outline:3px solid #c2410c;outline-offset:3px}
+</style>
+<a class="nk-home-top" href="../../index.html#credits">← Nehal's work</a>
+<script>(function(){var b=document.querySelector(".nk-home-top");if(!b)return;var y=scrollY,t=false;addEventListener("scroll",function(){if(t)return;t=true;requestAnimationFrame(function(){var n=scrollY,end=n+innerHeight>=document.documentElement.scrollHeight-80;if(innerWidth<900){b.classList.toggle("away",!end);}else if(end||(n<y-4&&n>400)){b.classList.remove("away");}else if(n>y+4||n<=400){b.classList.add("away");}y=n;t=false;});},{passive:true});if(scrollY+innerHeight<document.documentElement.scrollHeight-80)b.classList.add("away");b.addEventListener("focus",function(){b.classList.remove("away")});})();</script>
+<section class="nk-next" aria-label="Next project">
+  <div class="nk-next-in">
+    <a class="nk-card" href="../freemium/index.html"><small>Next project →</small><b>Freemium trials</b><span>B2B customs SaaS · Trials, admin and emails · 2025</span></a>
+    <a class="nk-home" href="../../index.html#credits">← All projects</a>
+  </div>
+</section>
+<script>(function(){var h;try{h=sessionStorage.getItem("home")}catch(e){}if(h!=="classic.html")return;document.querySelectorAll('a[href^="../../index.html"]').forEach(function(a){a.setAttribute("href",a.getAttribute("href").replace("../../index.html","../../classic.html").replace(/#(menu|journey|lvl-\d|notifications|credits|freemium|beriglo)$/,"#work"))});})();</script>
+</body>
+</html>
